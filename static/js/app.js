@@ -4,6 +4,9 @@ const CPO_STEP_LABELS     = ['Welcome','Cost trend','Pain area','Operation size'
 const CULTURE_STEP_LABELS = ['Welcome','Your style','Your team','Decision making','Barriers','Your focus','Actions this week','Wrap-up'];
 const PROMO_STEP_LABELS   = ['Welcome','Your timeline','Manager signals','Track record','Senior visibility','Your focus','Actions this week','Wrap-up'];
 
+const OT_STEP_LABELS = ['Welcome','Overtime driver','Pattern','Your data','Lead readiness','Your focus','Actions this week','Wrap-up'];
+
+
 const COLOR = {
   teal:   { border: '#0F6E56', bg: '#E1F5EE', text: '#085041', accent: '#0F6E56' },
   amber:  { border: '#BA7517', bg: '#FAEEDA', text: '#633806', accent: '#BA7517' },
@@ -119,7 +122,8 @@ const UI = {
     const goals = {
       cpo:     'Goal: Reduce cost per order & build coaching culture.',
       culture: 'Goal: Build a stronger coaching culture with your team leads.',
-      promo:   'Goal: Build your case for Operations Manager promotion.'
+      promo:   'Goal: Build your case for Operations Manager promotion.',
+      ot:      'Goal: Reduce overtime by finding and fixing the root cause.'
     };
     document.getElementById('snap-goal').textContent = _hasPain
       ? (goals[_flowType] || goals.cpo)
@@ -775,6 +779,177 @@ const PromoFlow = {
   }
 };
 
+// ── OVERTIME FLOW ─────────────────────────────────────────────────────
+const OvertimeFlow = {
+  async start() {
+    _flowType = 'ot'; _hasPain = false;
+    await API.post('/api/state', { flow_type: 'ot' });
+    UI.updateDots(1, 7);
+    await UI.coachSay(`Let's get your overtime under control. Chronic overtime is expensive and exhausting — and it's almost always fixable once you know where it's actually coming from.<br><br>Four honest questions. The more specific you are, the better the recommendation.`);
+    setTimeout(() => this.stepDriver(), 300);
+  },
+
+  stepDriver() {
+    UI.coachSay("When your team runs overtime, what's the <strong>most common trigger</strong>?").then(() => {
+      UI.addChips([
+        { label: 'Order volume arrives at the wrong time for our shifts', val: 'schedule' },
+        { label: 'Peak periods hit harder than we can absorb',            val: 'peak'     },
+        { label: 'Errors and rework add hours at the end of shifts',      val: 'rework'   },
+        { label: 'Staff absences we have to cover at the last minute',    val: 'absence'  },
+        { label: "I'm not sure — it feels unpredictable",                val: 'unsure'   },
+      ], async (val) => {
+        await FocusEngine.setState({ ot_driver: val, step: 2 }); UI.updateDots(2, 7);
+        _hasPain = true;
+        setTimeout(() => this.stepPattern(), 400);
+      });
+    });
+  },
+
+  stepPattern() {
+    UI.coachSay("When you look across the last few weeks, how would you describe the <strong>overtime pattern</strong>?").then(() => {
+      UI.addChips([
+        { label: 'It happens at roughly the same time most days', val: 'same_time'  },
+        { label: 'It tends to pile up at the end of shifts',      val: 'end_shift'  },
+        { label: 'It feels random — hard to predict',             val: 'random'     },
+        { label: 'It's occasional rather than a weekly pattern', val: 'occasional' },
+      ], async (val) => {
+        await FocusEngine.setState({ ot_pattern: val, step: 3 }); UI.updateDots(3, 7);
+        setTimeout(() => this.stepData(), 400);
+      });
+    });
+  },
+
+  stepData() {
+    UI.coachSay("How much <strong>data do you currently have</strong> on when and why overtime is happening?").then(() => {
+      UI.addChips([
+        { label: 'Good data — I can pull hours and reasons easily', val: 'good' },
+        { label: 'Some data but it takes effort to pull together',  val: 'some' },
+        { label: 'Not much — I mostly know from experience',        val: 'none' },
+      ], async (val) => {
+        await FocusEngine.setState({ ot_data: val, step: 4 }); UI.updateDots(4, 7);
+        setTimeout(() => this.stepLeads(), 400);
+      });
+    });
+  },
+
+  stepLeads() {
+    UI.coachSay("When it comes to solving this with your team leads — where are you right now?").then(() => {
+      UI.addChips([
+        { label: 'Ready — I want them involved in finding the fix', val: 'ready'   },
+        { label: 'I'd rather understand the problem myself first', val: 'not_yet' },
+        { label: 'My leads don't yet have the skills to help',     val: 'skills'  },
+      ], async (val) => {
+        await FocusEngine.setState({ ot_leads: val, step: 5 }); UI.updateDots(5, 7);
+        setTimeout(() => this.stepFocus(), 500);
+      });
+    });
+  },
+
+  async stepFocus() {
+    try {
+      const focus = await FocusEngine.loadFocus();
+      FocusEngine.renderFocusCard(focus, 'Recommended focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load recommendation. Please refresh.'); }
+  },
+  async nextFocus() {
+    try {
+      const focus = await FocusEngine.nextFocus();
+      FocusEngine.renderFocusCard(focus, 'Alternative focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load alternative.'); }
+  },
+  async confirmFocus() {
+    try { await FocusEngine.confirmFocus(); UI.updateDots(6, 7); setTimeout(() => this.stepTasks(), 600); }
+    catch (e) { UI.addBubble('Something went wrong. Please refresh.'); }
+  },
+
+  stepTasks() {
+    const f = FocusEngine.currentFocus;
+    UI.coachSay("Here are <strong>two things to do this week</strong> — one to build the data picture, one to start fixing it with your team.").then(() => {
+      setTimeout(() => this._renderDataCard(f), 400);
+      setTimeout(() => { this._renderActionCard(f); setTimeout(() => this.stepWrap(), 900); }, 1000);
+    });
+  },
+
+  _renderDataCard(f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-data';
+    div.innerHTML = `
+      <div class="task-header process" style="color:var(--teal)"><i class="ti ti-chart-bar"></i> Data task</div>
+      <div class="task-body" id="tbody-data">${f.data}</div>
+      <div class="task-actions">
+        <button class="task-chip" id="tchip-plan-data" onclick="OvertimeFlow.taskAction('data','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="OvertimeFlow.taskAction('data','small')">Too big — suggest smaller</button>
+      </div>`;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
+  },
+
+  _renderActionCard(f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-action';
+    div.innerHTML = `
+      <div class="task-header coaching"><i class="ti ti-users"></i> Team action</div>
+      <div class="task-body" id="tbody-action">${f.action}</div>
+      <div class="task-actions">
+        <button class="task-chip" id="tchip-plan-action" onclick="OvertimeFlow.taskAction('action','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="OvertimeFlow.taskAction('action','small')">Too big — suggest smaller</button>
+        <button class="task-chip" onclick="OvertimeFlow.taskAction('action','notready')">Not ready to involve my leads yet</button>
+      </div>`;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
+  },
+
+  taskAction(type, action) {
+    const f = FocusEngine.currentFocus;
+    const body = document.getElementById('tbody-' + type);
+    if (!body) return;
+    if (action === 'plan') {
+      const btn = document.getElementById('tchip-plan-' + type);
+      btn.className = 'task-chip done-chip'; btn.innerHTML = '<i class="ti ti-check"></i> Planned for this week'; btn.disabled = true;
+    } else if (action === 'small') {
+      body.innerHTML = type === 'data' ? f.dataSmall : f.actionSmall;
+      body.closest('.task-card').querySelectorAll('.task-chip:not(.done-chip)')[0]?.remove();
+    } else if (action === 'notready') {
+      body.innerHTML = f.actionNotReady;
+      body.closest('.task-card').querySelectorAll('.task-chip:not(.done-chip)')[0]?.remove();
+    }
+    UI.chatBody().scrollTop = 99999;
+  },
+
+  async stepWrap() {
+    UI.updateDots(7, 7);
+    const driverL = {
+      schedule: 'shift schedules not matching order arrival times',
+      peak:     'peak periods hitting harder than the floor can absorb',
+      rework:   'errors and rework adding hours at the end of shifts',
+      absence:  'last-minute staff absence cover',
+      unsure:   'unclear — multiple possible factors'
+    };
+    const patternL = {
+      same_time:  'consistently at the same time of day',
+      end_shift:  'piling up at the end of shifts',
+      random:     'unpredictable — no clear pattern yet',
+      occasional: 'occasional rather than systematic'
+    };
+    const { state } = await API.get('/api/state').catch(() => ({ state: {} }));
+    await UI.coachSay(`Here's what we've established:<br><br>
+      ⏰ <strong>Primary driver:</strong> ${driverL[state.ot_driver] || 'operational pressure'}.<br>
+      📈 <strong>Pattern:</strong> Overtime is ${patternL[state.ot_pattern] || 'variable'}.<br>
+      🎯 <strong>Focus:</strong> ${FocusEngine.currentFocus.title}.<br>
+      📋 <strong>This week:</strong> One data task, one action with your team.<br><br>When would you like me to check in?`);
+    UI.addChips([
+      { label: '3 days', val: '3 days' }, { label: '1 week', val: '1 week' }, { label: 'Remind me later', val: 'later' },
+    ], async (val) => {
+      await FocusEngine.setState({ checkin: val, step: 8 }); UI.updateDots(8, 7);
+      setTimeout(() => this.stepDone(val), 400);
+    });
+  },
+
+  async stepDone(checkin) {
+    const label = checkin === 'later' ? "when you're ready" : `in <strong>${checkin}</strong>`;
+    await UI.coachSay(`Got it — I'll check in ${label}.<br><br>Overtime is a solvable problem. You've identified where to look and you have a first step. That's how it starts.<br><br>Good luck this week, Alex. 🌱`);
+    _renderWrapButtons();
+  }
+};
+
 // Helper: infer primary blocker from visibility answer + track record
 function _inferBlocker(visibility) {
   if (visibility === 'none') return 'not_visible';
@@ -888,6 +1063,7 @@ const App = {
     API.post('/api/reset').finally(() => {
       if (type === 'culture')       CultureFlow.start();
       else if (type === 'promo')    PromoFlow.start();
+      else if (type === 'ot')       OvertimeFlow.start();
       else                          CpoFlow.start();
     });
   }
