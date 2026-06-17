@@ -11,10 +11,15 @@ const COLOR = {
   purple: { border: '#534AB7', bg: '#EEEDFE', text: '#3C3489', accent: '#534AB7' }
 };
 
+// ── STATE ──────────────────────────────────────────────────────────────
+let _hasPain = false;
+let _inSession = false;
+
 // ── API LAYER ──────────────────────────────────────────────────────────
 const API = {
   async get(path) {
     const r = await fetch(path);
+    if (!r.ok) throw new Error(`GET ${path} failed: ${r.status}`);
     return r.json();
   },
   async post(path, body = {}) {
@@ -23,6 +28,7 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
+    if (!r.ok) throw new Error(`POST ${path} failed: ${r.status}`);
     return r.json();
   }
 };
@@ -47,6 +53,8 @@ const UI = {
 
   addTyping() {
     const cb = this.chatBody();
+    // Only add one typing indicator at a time
+    if (document.getElementById('typing-row')) return;
     const row = document.createElement('div');
     row.id = 'typing-row';
     row.className = 'bubble-row';
@@ -121,122 +129,142 @@ const UI = {
       : `<strong>Step ${idx} of 8</strong> — ${STEP_LABELS[idx]}`;
   },
 
-  updateSnap(scores, hasPain) {
+  updateSnap(scores) {
     document.getElementById('op-bar').style.width = scores.op + '%';
     document.getElementById('pe-bar').style.width = scores.pe + '%';
     document.getElementById('op-pct').textContent = scores.op + '%';
     document.getElementById('pe-pct').textContent = scores.pe + '%';
-    document.getElementById('snap-goal').textContent = hasPain
+    document.getElementById('snap-goal').textContent = _hasPain
       ? 'Goal: Reduce cost per order & build coaching culture.'
       : 'Start a coaching session to see your progress here.';
-    document.getElementById('session-badge').style.display = 'inline-block';
+  },
+
+  showSessionBadge(show) {
+    document.getElementById('session-badge').style.display = show ? 'inline-block' : 'none';
+  },
+
+  // Show/hide the start-over button in topbar
+  showHomeBtn(show) {
+    document.getElementById('home-btn').style.display = show ? 'flex' : 'none';
   }
 };
 
 // ── DASHBOARD RENDERER ─────────────────────────────────────────────────
 const Dashboard = {
   async render() {
-    const data = await API.get('/api/dashboard');
     const el = document.getElementById('dash-body');
-    const maxCPO = 5.50;
-    const maxCoach = Math.max(...data.coaching_trend, 1);
+    el.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-s)">
+      <div class="typing" style="justify-content:center;margin-bottom:8px">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div>Loading dashboard...</div>`;
 
-    el.innerHTML = `
-    <div class="dash-scroll" style="padding:24px">
+    try {
+      const data = await API.get('/api/dashboard');
+      const maxCPO = 5.50;
+      const maxCoach = Math.max(...data.coaching_trend, 1);
 
-      <div class="dash-section">
-        <div class="dash-section-title"><i class="ti ti-layout-dashboard"></i> Grow dashboard</div>
-        <div class="metric-grid">
-          <div class="metric">
-            <div class="metric-l">Cost per order</div>
-            <div class="metric-v" style="color:var(--coral)">${data.metrics.cost_per_order.value}</div>
-            <div class="metric-d bad"><i class="ti ti-arrow-up"></i> ${data.metrics.cost_per_order.delta}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-l">Coaching actions</div>
-            <div class="metric-v" style="color:var(--teal)">${data.metrics.coaching_actions.value}</div>
-            <div class="metric-d good">${data.metrics.coaching_actions.delta}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-l">Promotion readiness</div>
-            <div class="metric-v" style="color:var(--purple)">${data.metrics.promotion_readiness.value}</div>
-            <div class="metric-d promo"><i class="ti ti-arrow-up"></i> ${data.metrics.promotion_readiness.delta}</div>
-          </div>
-        </div>
-      </div>
+      el.innerHTML = `
+      <div style="padding:24px">
 
-      <div class="dash-section">
-        <div class="dash-section-title"><i class="ti ti-trending-down"></i> Cost per order — last 8 weeks</div>
-        <div class="chart-card">
-          <div class="mini-chart">
-            ${data.cpo_trend.map((d, i) => `
-              <div class="chart-bar ${d.above ? 'above' : 'below'}"
-                   style="height:${Math.round((d.value / maxCPO) * 100)}%"
-                   title="${d.week}: $${d.value.toFixed(2)}">
-                <span class="chart-bar-val">$${d.value.toFixed(2)}</span>
-              </div>`).join('')}
-          </div>
-          <div style="font-size:10px;color:var(--text-xs);margin-top:6px">Target: $4.25</div>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:var(--coral)"></div> Above target</div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div> At / near target</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-title"><i class="ti ti-award"></i> Promotion readiness</div>
-        <div class="promo-card">
-          <div class="promo-header"><i class="ti ti-award"></i> Operations Manager track</div>
-          <div class="promo-body">${data.promo_text}</div>
-          <div class="promo-progress">
-            <div class="promo-bar-label">
-              <span>Overall readiness</span>
-              <span>${data.promo_readiness}%</span>
+        <div class="dash-section">
+          <div class="dash-section-title"><i class="ti ti-layout-dashboard"></i> Grow dashboard</div>
+          <div class="metric-grid">
+            <div class="metric">
+              <div class="metric-l">Cost per order</div>
+              <div class="metric-v" style="color:var(--coral)">${data.metrics.cost_per_order.value}</div>
+              <div class="metric-d bad"><i class="ti ti-arrow-up"></i> ${data.metrics.cost_per_order.delta}</div>
             </div>
-            <div class="promo-bar-track">
-              <div class="promo-bar-fill" id="promo-fill" style="width:0%"></div>
+            <div class="metric">
+              <div class="metric-l">Coaching actions</div>
+              <div class="metric-v" style="color:var(--teal)">${data.metrics.coaching_actions.value}</div>
+              <div class="metric-d good">${data.metrics.coaching_actions.delta}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-l">Promotion readiness</div>
+              <div class="metric-v" style="color:var(--purple)">${data.metrics.promotion_readiness.value}</div>
+              <div class="metric-d promo"><i class="ti ti-arrow-up"></i> ${data.metrics.promotion_readiness.delta}</div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="dash-section">
-        <div class="dash-section-title"><i class="ti ti-users"></i> Coaching actions per week</div>
-        <div class="chart-card">
-          <div class="coach-bar-grid">
-            ${data.coaching_trend.map((v, i) => `
-              <div class="coach-bar"
-                   style="height:${Math.max(Math.round((v / maxCoach) * 100), 12)}%"
-                   title="Week ${i + 1}: ${v} actions">
-                <span class="coach-bar-val">${v}</span>
+        <div class="dash-section">
+          <div class="dash-section-title"><i class="ti ti-trending-down"></i> Cost per order — last 8 weeks</div>
+          <div class="chart-card">
+            <div class="mini-chart">
+              ${data.cpo_trend.map((d, i) => `
+                <div class="chart-bar ${d.above ? 'above' : 'below'}"
+                     style="height:${Math.round((d.value / maxCPO) * 100)}%"
+                     title="${d.week}: $${d.value.toFixed(2)}">
+                  <span class="chart-bar-val">$${d.value.toFixed(2)}</span>
+                </div>`).join('')}
+            </div>
+            <div style="font-size:10px;color:var(--text-xs);margin-top:6px">Target: $4.25</div>
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--coral)"></div> Above target</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div> At / near target</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <div class="dash-section-title"><i class="ti ti-award"></i> Promotion readiness</div>
+          <div class="promo-card">
+            <div class="promo-header"><i class="ti ti-award"></i> Operations Manager track</div>
+            <div class="promo-body">${data.promo_text}</div>
+            <div class="promo-progress">
+              <div class="promo-bar-label">
+                <span>Overall readiness</span>
+                <span>${data.promo_readiness}%</span>
+              </div>
+              <div class="promo-bar-track">
+                <div class="promo-bar-fill" id="promo-fill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <div class="dash-section-title"><i class="ti ti-users"></i> Coaching actions per week</div>
+          <div class="chart-card">
+            <div class="coach-bar-grid">
+              ${data.coaching_trend.map((v, i) => `
+                <div class="coach-bar"
+                     style="height:${Math.max(Math.round((v / maxCoach) * 100), 12)}%"
+                     title="Week ${i + 1}: ${v} actions">
+                  <span class="coach-bar-val">${v}</span>
+                </div>`).join('')}
+            </div>
+            <div style="font-size:10px;color:var(--text-xs);margin-top:8px;text-align:center">Last 8 weeks</div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <div class="dash-section-title"><i class="ti ti-list-check"></i> Recent actions</div>
+          <div class="log-list">
+            ${data.recent_actions.map(a => `
+              <div class="log-item">
+                <div class="log-dot"></div>
+                <span class="log-text">${a.text}</span>
+                <span class="log-time">${a.time}</span>
               </div>`).join('')}
           </div>
-          <div style="font-size:10px;color:var(--text-xs);margin-top:8px;text-align:center">Last 8 weeks</div>
         </div>
-      </div>
 
-      <div class="dash-section">
-        <div class="dash-section-title"><i class="ti ti-list-check"></i> Recent actions</div>
-        <div class="log-list">
-          ${data.recent_actions.map(a => `
-            <div class="log-item">
-              <div class="log-dot"></div>
-              <span class="log-text">${a.text}</span>
-              <span class="log-time">${a.time}</span>
-            </div>`).join('')}
-        </div>
-      </div>
+      </div>`;
 
-    </div>`;
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const fill = document.getElementById('promo-fill');
+          if (fill) fill.style.width = data.promo_readiness + '%';
+        }, 100);
+      });
 
-    // Animate promo bar after paint
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const fill = document.getElementById('promo-fill');
-        if (fill) fill.style.width = data.promo_readiness + '%';
-      }, 100);
-    });
+    } catch (err) {
+      el.innerHTML = `<div style="padding:40px;text-align:center;color:var(--coral)">
+        <i class="ti ti-alert-circle" style="font-size:24px"></i>
+        <p style="margin-top:8px">Could not load dashboard. Please refresh the page.</p>
+      </div>`;
+    }
   }
 };
 
@@ -245,27 +273,38 @@ const Coach = {
   currentFocus: null,
 
   async setState(updates) {
-    const res = await API.post('/api/state', updates);
-    if (res.scores) {
-      const hasPain = !!updates.pain || !!(await API.get('/api/state')).state.pain;
-      UI.updateSnap(res.scores, hasPain);
+    try {
+      if (updates.pain) _hasPain = true;
+      const res = await API.post('/api/state', updates);
+      if (res.scores) UI.updateSnap(res.scores);
+      return res;
+    } catch (err) {
+      console.error('setState failed:', err);
     }
-    return res;
   },
 
   async start() {
+    // Switch views
     document.getElementById('view-entry').classList.remove('active');
     document.getElementById('view-chat').classList.add('active');
+    document.getElementById('nav-coach').classList.add('active');
     document.getElementById('chat-body').innerHTML = '';
+
+    _inSession = true;
+    _hasPain = false;
     UI.updateDots(1);
+    UI.showSessionBadge(true);
+    UI.showHomeBtn(true);
 
-    // Reset server session
-    await API.post('/api/reset');
-
-    await UI.coachSay(
-      `Great choice, Alex. We'll look at what's driving your <strong>cost per order</strong> and how your team is working — because improving <em>processes</em> and developing <em>people</em> go hand in hand.<br><br>This takes about 5 minutes. Tap your answers as we go.`
-    );
-    setTimeout(() => this.stepTrend(), 300);
+    try {
+      await API.post('/api/reset');
+      await UI.coachSay(
+        `Great choice, Alex. We'll look at what's driving your <strong>cost per order</strong> and how your team is working — because improving <em>processes</em> and developing <em>people</em> go hand in hand.<br><br>This takes about 5 minutes. Tap your answers as we go.`
+      );
+      setTimeout(() => this.stepTrend(), 300);
+    } catch (err) {
+      UI.addBubble('Something went wrong starting the session. Please refresh and try again.');
+    }
   },
 
   stepTrend() {
@@ -300,18 +339,18 @@ const Coach = {
   stepSize() {
     UI.coachSay('A couple of quick context questions — how many <strong>orders per day</strong> does your site typically run?').then(() => {
       UI.addChips([
-        { label: 'Under 500',    val: 's' },
-        { label: '500 – 2,000', val: 'm' },
-        { label: '2,000 – 5,000', val: 'l' },
-        { label: 'Over 5,000',  val: 'xl' },
+        { label: 'Under 500',       val: 's'  },
+        { label: '500 – 2,000',    val: 'm'  },
+        { label: '2,000 – 5,000',  val: 'l'  },
+        { label: 'Over 5,000',      val: 'xl' },
       ], async (val) => {
         await this.setState({ orders: val });
         UI.coachSay('And how many <strong>team leads or direct reports</strong> do you manage?').then(() => {
           UI.addChips([
             { label: '1 – 3',  val: 'xs' },
-            { label: '4 – 8',  val: 's' },
-            { label: '9 – 15', val: 'm' },
-            { label: '16+',    val: 'l' },
+            { label: '4 – 8',  val: 's'  },
+            { label: '9 – 15', val: 'm'  },
+            { label: '16+',    val: 'l'  },
           ], async (v) => {
             await this.setState({ team: v, step: 3 });
             UI.updateDots(3);
@@ -325,9 +364,9 @@ const Coach = {
   stepCulture() {
     UI.coachSay("Now let's check in on your <strong>team leads</strong>. Which sounds most like your current reality?").then(() => {
       UI.addChips([
-        { label: 'They mostly follow my instructions',              val: 'follow' },
+        { label: 'They mostly follow my instructions',              val: 'follow'    },
         { label: 'They sometimes bring ideas, but I usually drive', val: 'sometimes' },
-        { label: 'They regularly bring ideas and own them',         val: 'frequent' },
+        { label: 'They regularly bring ideas and own them',         val: 'frequent'  },
       ], async (val) => {
         await this.setState({ culture: val, step: 4 });
         UI.updateDots(4);
@@ -340,29 +379,29 @@ const Coach = {
     UI.coachSay("Almost done. Four quick driver questions — tap where you'd honestly put your operation today.").then(() => {
       UI.coachSay('<strong>Shift schedules vs. workload</strong> — how well do your shifts match when the work actually arrives?').then(() => {
         UI.addChips([
-          { label: 'Often mismatched', val: 'mis' },
+          { label: 'Often mismatched', val: 'mis'   },
           { label: 'Mostly matched',   val: 'mostly' },
         ], async (v) => {
           await this.setState({ schedule: v });
           UI.coachSay('<strong>Errors and rework</strong> — how often do order errors require correction?').then(() => {
             UI.addChips([
-              { label: 'Often — a real cost driver', val: 'often' },
+              { label: 'Often — a real cost driver', val: 'often'     },
               { label: 'Sometimes',                  val: 'sometimes' },
-              { label: 'Rare',                       val: 'rare' },
+              { label: 'Rare',                       val: 'rare'      },
             ], async (v2) => {
               await this.setState({ errors: v2 });
               UI.coachSay('<strong>Flow and bottlenecks</strong> — how would you describe throughput during peak periods?').then(() => {
                 UI.addChips([
-                  { label: 'Frequent bottlenecks', val: 'freq' },
-                  { label: 'Some slowdowns',       val: 'some' },
+                  { label: 'Frequent bottlenecks', val: 'freq'   },
+                  { label: 'Some slowdowns',       val: 'some'   },
                   { label: 'Mostly smooth',        val: 'smooth' },
                 ], async (v3) => {
                   await this.setState({ flow: v3 });
                   UI.coachSay('<strong>Team initiative</strong> — how often do your leads surface improvement ideas without being asked?').then(() => {
                     UI.addChips([
-                      { label: 'Rare — I have to pull ideas',  val: 'rare' },
-                      { label: 'Sometimes',                    val: 'some' },
-                      { label: 'Frequently — they drive it',   val: 'frequent' },
+                      { label: 'Rare — I have to pull ideas', val: 'rare'     },
+                      { label: 'Sometimes',                   val: 'some'     },
+                      { label: 'Frequently — they drive it',  val: 'frequent' },
                     ], async (v4) => {
                       await this.setState({ initiative: v4, step: 5 });
                       UI.updateDots(5);
@@ -379,66 +418,57 @@ const Coach = {
   },
 
   async stepFocus() {
-    const { focus } = await API.get('/api/focus');
-    this.currentFocus = focus;
+    try {
+      const { focus } = await API.get('/api/focus');
+      this.currentFocus = focus;
+      this._renderFocusCard(focus, 'Recommended focus');
+    } catch (err) {
+      UI.addBubble('Could not load your focus recommendation. Please try refreshing.');
+    }
+  },
+
+  _renderFocusCard(focus, label) {
     const c = COLOR[focus.color] || COLOR.teal;
 
-    await UI.coachSay("Based on everything you've shared, here's where I think you'll get the most traction — on cost <em>and</em> on developing your team:");
+    UI.coachSay("Based on everything you've shared, here's where I think you'll get the most traction — on cost <em>and</em> on developing your team:").then(() => {
+      // Remove any previous focus card
+      document.getElementById('focus-card')?.remove();
 
-    const cb = UI.chatBody();
-    const div = document.createElement('div');
-    div.className = 'focus-card';
-    div.id = 'focus-card';
-    div.style.border = `1.5px solid ${c.border}`;
-    div.style.background = c.bg;
-    div.innerHTML = `
-      <div class="focus-label" style="color:${c.accent}">Recommended focus</div>
-      <div class="focus-title" style="color:${c.text}">${focus.title}</div>
-      <div class="focus-why"   style="color:${c.accent}">${focus.why}</div>
-      <div class="focus-btns">
-        <button class="btn-primary" id="btn-confirm-focus" style="background:${c.accent}">
-          Yes, let's start here
-        </button>
-        <button class="btn-ghost" id="btn-next-focus" style="color:${c.accent};border-color:${c.accent}">
-          Show another option
-        </button>
-      </div>`;
-    cb.appendChild(div);
-    cb.scrollTop = cb.scrollHeight;
+      const cb = UI.chatBody();
+      const div = document.createElement('div');
+      div.className = 'focus-card';
+      div.id = 'focus-card';
+      div.style.border = `1.5px solid ${c.border}`;
+      div.style.background = c.bg;
+      div.innerHTML = `
+        <div class="focus-label" style="color:${c.accent}">${label}</div>
+        <div class="focus-title" style="color:${c.text}">${focus.title}</div>
+        <div class="focus-why"   style="color:${c.accent}">${focus.why}</div>
+        <div class="focus-btns">
+          <button class="btn-primary" id="btn-confirm-focus" style="background:${c.accent}">
+            Yes, let's start here
+          </button>
+          <button class="btn-ghost" id="btn-next-focus" style="color:${c.accent};border-color:${c.accent}">
+            Show another option
+          </button>
+        </div>`;
+      cb.appendChild(div);
+      cb.scrollTop = cb.scrollHeight;
 
-    document.getElementById('btn-confirm-focus').onclick = () => this.confirmFocus();
-    document.getElementById('btn-next-focus').onclick   = () => this.nextFocus();
+      document.getElementById('btn-confirm-focus').onclick = () => this.confirmFocus();
+      document.getElementById('btn-next-focus').onclick   = () => this.nextFocus();
+    });
   },
 
   async nextFocus() {
-    document.getElementById('focus-card')?.remove();
-    const { focus } = await API.post('/api/focus/next');
-    this.currentFocus = focus;
-    const c = COLOR[focus.color] || COLOR.teal;
-
-    const cb = UI.chatBody();
-    const div = document.createElement('div');
-    div.className = 'focus-card';
-    div.id = 'focus-card';
-    div.style.border = `1.5px solid ${c.border}`;
-    div.style.background = c.bg;
-    div.innerHTML = `
-      <div class="focus-label" style="color:${c.accent}">Alternative focus</div>
-      <div class="focus-title" style="color:${c.text}">${focus.title}</div>
-      <div class="focus-why"   style="color:${c.accent}">${focus.why}</div>
-      <div class="focus-btns">
-        <button class="btn-primary" id="btn-confirm-focus" style="background:${c.accent}">
-          Yes, let's start here
-        </button>
-        <button class="btn-ghost" id="btn-next-focus" style="color:${c.accent};border-color:${c.accent}">
-          Show another option
-        </button>
-      </div>`;
-    cb.appendChild(div);
-    cb.scrollTop = cb.scrollHeight;
-
-    document.getElementById('btn-confirm-focus').onclick = () => this.confirmFocus();
-    document.getElementById('btn-next-focus').onclick   = () => this.nextFocus();
+    try {
+      document.getElementById('focus-card')?.remove();
+      const { focus } = await API.post('/api/focus/next');
+      this.currentFocus = focus;
+      this._renderFocusCard(focus, 'Alternative focus');
+    } catch (err) {
+      UI.addBubble('Could not load alternative. Please try again.');
+    }
   },
 
   async confirmFocus() {
@@ -447,10 +477,14 @@ const Coach = {
       card.querySelector('.focus-btns').innerHTML =
         '<span style="font-size:12px;color:var(--teal);font-weight:500"><i class="ti ti-check"></i> Focus confirmed</span>';
     }
-    const res = await API.post('/api/focus/confirm');
-    this.currentFocus = res.focus;
-    UI.updateDots(6);
-    setTimeout(() => this.stepTasks(), 600);
+    try {
+      const res = await API.post('/api/focus/confirm');
+      this.currentFocus = res.focus;
+      UI.updateDots(6);
+      setTimeout(() => this.stepTasks(), 600);
+    } catch (err) {
+      UI.addBubble('Something went wrong. Please try refreshing.');
+    }
   },
 
   stepTasks() {
@@ -459,7 +493,7 @@ const Coach = {
       setTimeout(() => this.renderTaskCard('process', f), 400);
       setTimeout(() => {
         this.renderTaskCard('coaching', f);
-        setTimeout(() => this.stepWrap(), 800);
+        setTimeout(() => this.stepWrap(), 900);
       }, 1000);
     });
   },
@@ -492,6 +526,8 @@ const Coach = {
   taskAction(type, action) {
     const f = this.currentFocus;
     const body = document.getElementById('tbody-' + type);
+    if (!body) return;
+
     if (action === 'plan') {
       const btn = document.getElementById('tchip-plan-' + type);
       btn.className = 'task-chip done-chip';
@@ -509,35 +545,39 @@ const Coach = {
 
   async stepWrap() {
     UI.updateDots(7);
-    const { state } = await API.get('/api/state');
-    const trendLabels = {
-      worse:  'above target and worsening',
-      stable: 'above target but stable',
-      close:  'near target but not improving'
-    };
-    const painLabels = {
-      labor:     'labour and overtime',
-      errors:    'errors and rework',
-      transport: 'transport and routing',
-      wait:      'waiting and bottlenecks',
-      unsure:    'multiple areas'
-    };
+    try {
+      const { state } = await API.get('/api/state');
+      const trendLabels = {
+        worse:  'above target and worsening',
+        stable: 'above target but stable',
+        close:  'near target but not improving'
+      };
+      const painLabels = {
+        labor:     'labour and overtime',
+        errors:    'errors and rework',
+        transport: 'transport and routing',
+        wait:      'waiting and bottlenecks',
+        unsure:    'multiple areas'
+      };
 
-    await UI.coachSay(`Here's a summary of your session so far:<br><br>
-      📌 <strong>Baseline:</strong> Cost per order is ${trendLabels[state.trend] || 'above target'}. Primary pressure: ${painLabels[state.pain] || state.pain}.<br>
-      🎯 <strong>Focus:</strong> ${this.currentFocus.title.split(' by ')[0]}.<br>
-      📋 <strong>This week:</strong> One process task, one coaching conversation.<br><br>
-      When would you like me to check in with you?`);
+      await UI.coachSay(`Here's a summary of your session so far:<br><br>
+        📌 <strong>Baseline:</strong> Cost per order is ${trendLabels[state.trend] || 'above target'}. Primary pressure: ${painLabels[state.pain] || state.pain}.<br>
+        🎯 <strong>Focus:</strong> ${this.currentFocus.title.split(' by ')[0]}.<br>
+        📋 <strong>This week:</strong> One process task, one coaching conversation.<br><br>
+        When would you like me to check in with you?`);
 
-    UI.addChips([
-      { label: '3 days',          val: '3 days' },
-      { label: '1 week',          val: '1 week' },
-      { label: 'Remind me later', val: 'later'  },
-    ], async (val) => {
-      await this.setState({ checkin: val, step: 8 });
-      UI.updateDots(8);
-      setTimeout(() => this.stepDone(val), 400);
-    });
+      UI.addChips([
+        { label: '3 days',          val: '3 days' },
+        { label: '1 week',          val: '1 week' },
+        { label: 'Remind me later', val: 'later'  },
+      ], async (val) => {
+        await this.setState({ checkin: val, step: 8 });
+        UI.updateDots(8);
+        setTimeout(() => this.stepDone(val), 400);
+      });
+    } catch (err) {
+      UI.addBubble('Could not load session summary. Please refresh the page.');
+    }
   },
 
   async stepDone(checkin) {
@@ -553,31 +593,38 @@ const Coach = {
       </button>
       <button class="btn-ghost" style="color:var(--purple);border-color:var(--purple);font-size:12px" onclick="App.showView('dash')">
         <i class="ti ti-layout-dashboard"></i> View my Grow dashboard
+      </button>
+      <button class="btn-ghost" style="color:var(--gray-400);border-color:var(--gray-200);font-size:12px" onclick="App.goHome()">
+        <i class="ti ti-home"></i> Back to home
       </button>`;
     cb.appendChild(div);
     cb.scrollTop = cb.scrollHeight;
   },
 
   async showManagerSummary() {
-    const summary = await API.get('/api/summary');
-    const cb = UI.chatBody();
-    const div = document.createElement('div');
-    div.className = 'summary-card';
-    div.style.cssText = 'margin: 8px 0 0 40px; max-width: 520px;';
-    div.innerHTML = `
-      <div class="summary-header">
-        <i class="ti ti-file-text"></i> Manager summary — ready to share
-      </div>
-      <div class="summary-body">
-        <p><strong>Context:</strong> Alex is working to reduce cost per order, which is currently ${summary.trend_label}. We've identified the primary focus as: "<em>${summary.focus_title}</em>".</p>
-        <p><strong>This week's commitments:</strong><br>
-           1. Process: ${summary.process_task}<br>
-           2. Coaching: ${summary.coaching_task}</p>
-        <p><strong>Check-in:</strong> ${summary.checkin}</p>
-        <p><strong>Development note:</strong> Alex is actively building coaching habits alongside operational improvement — involving team leads in root cause work rather than directing solutions. This is a key signal of readiness for Operations Manager.</p>
-      </div>`;
-    cb.appendChild(div);
-    cb.scrollTop = cb.scrollHeight;
+    try {
+      const summary = await API.get('/api/summary');
+      const cb = UI.chatBody();
+      const div = document.createElement('div');
+      div.className = 'summary-card';
+      div.style.cssText = 'margin: 8px 0 0 40px; max-width: 520px;';
+      div.innerHTML = `
+        <div class="summary-header">
+          <i class="ti ti-file-text"></i> Manager summary — ready to share
+        </div>
+        <div class="summary-body">
+          <p><strong>Context:</strong> Alex is working to reduce cost per order, which is currently ${summary.trend_label}. We've identified the primary focus as: "<em>${summary.focus_title}</em>".</p>
+          <p><strong>This week's commitments:</strong><br>
+             1. Process: ${summary.process_task}<br>
+             2. Coaching: ${summary.coaching_task}</p>
+          <p><strong>Check-in:</strong> ${summary.checkin}</p>
+          <p><strong>Development note:</strong> Alex is actively building coaching habits alongside operational improvement — involving team leads in root cause work rather than directing solutions. This is a key signal of readiness for Operations Manager.</p>
+        </div>`;
+      cb.appendChild(div);
+      cb.scrollTop = cb.scrollHeight;
+    } catch (err) {
+      UI.addBubble('Could not generate summary. Please try again.');
+    }
   }
 };
 
@@ -588,16 +635,44 @@ const App = {
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
 
     if (v === 'coach') {
-      const step = parseInt(document.getElementById('d1')?.classList.contains('done') ||
-                            document.getElementById('d1')?.classList.contains('active'));
-      const inSession = document.getElementById('chat-body')?.children.length > 0;
-      document.getElementById(inSession ? 'view-chat' : 'view-entry').classList.add('active');
+      // Show chat if session is active, entry screen otherwise
+      const which = _inSession ? 'view-chat' : 'view-entry';
+      document.getElementById(which).classList.add('active');
       document.getElementById('nav-coach').classList.add('active');
-    } else {
+    } else if (v === 'dash') {
       document.getElementById('view-dash').classList.add('active');
       document.getElementById('nav-dash').classList.add('active');
       Dashboard.render();
     }
+  },
+
+  // Return to the home/entry screen and reset everything
+  async goHome() {
+    try {
+      await API.post('/api/reset');
+    } catch (e) { /* ignore */ }
+
+    _inSession = false;
+    _hasPain = false;
+    Coach.currentFocus = null;
+
+    // Reset UI
+    document.getElementById('chat-body').innerHTML = '';
+    UI.updateDots(0);
+    UI.showSessionBadge(false);
+    UI.showHomeBtn(false);
+    document.getElementById('snap-goal').textContent = 'Start a coaching session to see your progress here.';
+    document.getElementById('op-bar').style.width = '0%';
+    document.getElementById('pe-bar').style.width = '0%';
+    document.getElementById('op-pct').textContent = '—';
+    document.getElementById('pe-pct').textContent = '—';
+
+    // Switch to entry view
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-entry').classList.add('active');
+    document.getElementById('nav-coach').classList.add('active');
+    document.getElementById('step-label').innerHTML = 'Welcome';
   },
 
   startFlow() {
@@ -608,4 +683,6 @@ const App = {
 // ── INIT ───────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   UI.updateDots(0);
+  UI.showHomeBtn(false);
+  UI.showSessionBadge(false);
 });

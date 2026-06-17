@@ -30,6 +30,9 @@
         <button class="nav-btn" id="nav-dash" onclick="App.showView('dash')">
           <i class="ti ti-layout-dashboard"></i> Grow dashboard
         </button>
+        <button class="nav-btn" id="nav-home" onclick="App.goHome()" style="margin-top:4px;color:var(--text-xs)">
+          <i class="ti ti-home"></i> Start over
+        </button>
       </nav>
 
       <div class="sidebar-snap">
@@ -68,7 +71,13 @@
     <!-- ── MAIN ───────────────────────────────────── -->
     <main class="main">
       <div class="topbar">
-        <span class="step-label" id="step-label">Welcome</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <!-- Home button — shown only during a session -->
+          <button id="home-btn" onclick="App.goHome()" class="home-btn" title="Back to home" style="display:none">
+            <i class="ti ti-arrow-left"></i> Home
+          </button>
+          <span class="step-label" id="step-label">Welcome</span>
+        </div>
         <div class="topbar-right">
           <span class="topbar-badge" id="session-badge" style="display:none">Session in progress</span>
           <span class="topbar-org">Logistics &amp; Distribution Co.</span>
@@ -88,19 +97,19 @@
                 <div class="ec-title">Improve my cost per order</div>
                 <div class="ec-sub">Diagnose what's driving costs and build your team's problem-solving capability</div>
               </div>
-              <div class="ec" tabindex="0" role="button">
+              <div class="ec coming-soon" tabindex="0" role="button" title="Coming soon">
                 <div class="ec-icon purple-icon"><i class="ti ti-users"></i></div>
-                <div class="ec-title">Build my coaching culture</div>
+                <div class="ec-title">Build my coaching culture <span class="pill">Soon</span></div>
                 <div class="ec-sub">Help team leads bring ideas and own improvements</div>
               </div>
-              <div class="ec" tabindex="0" role="button">
+              <div class="ec coming-soon" tabindex="0" role="button" title="Coming soon">
                 <div class="ec-icon amber-icon"><i class="ti ti-award"></i></div>
-                <div class="ec-title">Prepare for promotion</div>
+                <div class="ec-title">Prepare for promotion <span class="pill">Soon</span></div>
                 <div class="ec-sub">Build your case for Operations Manager in 12–18 months</div>
               </div>
-              <div class="ec" tabindex="0" role="button">
+              <div class="ec coming-soon" tabindex="0" role="button" title="Coming soon">
                 <div class="ec-icon coral-icon"><i class="ti ti-clock"></i></div>
-                <div class="ec-title">Reduce overtime</div>
+                <div class="ec-title">Reduce overtime <span class="pill">Soon</span></div>
                 <div class="ec-sub">Better shift scheduling to control labour costs</div>
               </div>
             </div>

@@ -392,3 +392,46 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
 /* ── ACCESSIBILITY ──────────────────────────────────────────── */
 button:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+/* ── HOME BUTTON ────────────────────────────────────────────── */
+.home-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-s);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  color: var(--text-s);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all .15s;
+}
+.home-btn:hover {
+  background: var(--gray-100);
+  color: var(--text);
+  border-color: var(--gray-400);
+}
+.home-btn i { font-size: 14px; }
+
+/* ── COMING SOON CARDS ──────────────────────────────────────── */
+.ec.coming-soon {
+  opacity: .65;
+  cursor: default;
+  pointer-events: none;
+}
+.pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  background: var(--gray-200);
+  color: var(--gray-600);
+  padding: 1px 6px;
+  border-radius: 10px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
