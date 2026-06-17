@@ -5,7 +5,7 @@ import uuid
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'grow-coach-dev-key-2024')
 
-# ─── CPO FOCUS LIBRARY ────────────────────────────────────────────────
+# ─── CPO FOCUS LIBRARY ───────────────────────────────────────────────
 CPO_FOCUSES = [
     {
         "id": "errors",
@@ -42,7 +42,7 @@ CPO_FOCUSES = [
     }
 ]
 
-# ─── CULTURE FOCUS LIBRARY ────────────────────────────────────────────
+# ─── CULTURE FOCUS LIBRARY ───────────────────────────────────────────
 CULTURE_FOCUSES = [
     {
         "id": "voice",
@@ -52,32 +52,64 @@ CULTURE_FOCUSES = [
         "action": "Run a 15-minute 'what's in the way?' conversation with your team leads in your next huddle. Ask: 'What's one thing that slows you down that I could help remove?' Write every answer on the board. Don't respond — just listen and capture.",
         "coaching": "After the huddle, pick ONE item from the list and act on it visibly within 48 hours. Tell your leads what you did: 'You said X was a problem — I changed Y.' This closes the loop and shows speaking up has impact.",
         "actionSmall": "Too big for a group? Start 1-on-1. Ask just one of your leads: 'What's one thing that gets in your way that I could fix?' One question. One person. That's enough for this week.",
-        "coachingSmall": "Skip the follow-through action for now. Just run the listening session and send a brief message afterwards: 'Thanks for sharing — I'm thinking about what you said.' Acknowledgement alone builds trust.",
-        "coachingNotReady": "That's okay. This week, just <strong>observe</strong>: in your next team meeting, notice who speaks, who stays quiet, and what topics come up vs. get avoided. Write it down. That observation is your starting point."
+        "coachingSmall": "Skip the follow-through action for now. Just run the listening session and send a brief message afterwards: 'Thanks for sharing — I'm thinking about what you said.' Acknowledgement alone builds trust."
     },
     {
         "id": "ownership",
         "title": "Give a team lead real ownership of an improvement project",
         "why": "Coaching culture isn't built through conversations alone — it's built when leads experience what it feels like to own something, make decisions, and see the results. A small delegation done well is worth ten coaching chats.",
         "color": "teal",
-        "action": "Identify one small, bounded improvement project (e.g. fixing the handoff between two stations, reducing late starts on one shift) and formally hand it to one team lead this week. Say: 'This is yours to solve. Come to me when you need a decision above your level.'",
+        "action": "Identify one small, bounded improvement project and formally hand it to one team lead this week. Say: 'This is yours to solve. Come to me when you need a decision above your level.'",
         "coaching": "Schedule a 10-minute check-in with them mid-week. Ask only questions: 'What's your plan? What have you tried? What's getting in the way?' Resist giving answers. Your job is to help them think, not think for them.",
-        "actionSmall": "Not ready to delegate a whole project? Give them a <strong>single decision</strong> instead: 'You choose how we handle X this week — I'll back whatever you decide.' One decision handed over is a real first step.",
-        "coachingSmall": "Skip the formal check-in. Just notice this week if the lead takes any initiative on their own without being asked, and if so, <strong>name it out loud</strong>: 'I noticed you sorted that yourself — that's exactly what I want to see more of.'",
-        "coachingNotReady": "Start even smaller: <strong>ask for their opinion</strong> before making a decision you'd normally make alone. 'What would you do here?' You don't have to follow their answer — but asking changes the dynamic."
+        "actionSmall": "Not ready to delegate a whole project? Give them a <strong>single decision</strong> instead: 'You choose how we handle X this week — I'll back whatever you decide.'",
+        "coachingSmall": "Skip the formal check-in. Just notice this week if the lead takes any initiative on their own without being asked, and if so, <strong>name it out loud</strong>: 'I noticed you sorted that yourself — that's exactly what I want to see more of.'"
     },
     {
         "id": "feedback",
         "title": "Build a regular rhythm of feedback between you and your team leads",
         "why": "Most leads don't know how they're really doing until something goes wrong. A short, consistent feedback loop changes that — and signals that you're invested in their growth, not just their output.",
         "color": "amber",
-        "action": "Introduce a brief end-of-week check-in with each team lead (10 minutes). Structure it simply: 'One thing that went well, one thing to work on, one thing I can do differently for you.' Rotate who goes first.",
-        "coaching": "When a lead shares something they want to work on, resist the urge to coach immediately. Instead, ask: 'What do you think you'd do differently next time?' Let them generate the answer first. Add only if they're stuck.",
+        "action": "Introduce a brief end-of-week check-in with each team lead (10 minutes). Structure it simply: 'One thing that went well, one thing to work on, one thing I can do differently for you.'",
+        "coaching": "When a lead shares something they want to work on, resist the urge to coach immediately. Instead ask: 'What do you think you'd do differently next time?' Let them generate the answer first.",
         "actionSmall": "Weekly is too much right now? Try it with <strong>just one lead</strong> this week as a test. Keep it to 5 minutes. If it feels useful, you can expand it.",
-        "coachingSmall": "Skip the structured format. This week, just find one moment to say to a lead: 'That thing you did on Tuesday — that was good, and here's why.' Specific, genuine positive feedback is a strong foundation.",
-        "coachingNotReady": "Start with yourself. Before you can give great feedback, spend this week <strong>noting one specific thing each lead does well</strong> — write it down. You'll be ready to share it when the time feels right."
+        "coachingSmall": "Skip the structured format. This week, just find one moment to say to a lead: 'That thing you did on Tuesday — that was good, and here's why.' Specific, genuine positive feedback is a strong foundation."
     }
 ]
+
+# ─── PROMOTION FOCUS LIBRARY ─────────────────────────────────────────
+PROMO_FOCUSES = [
+    {
+        "id": "evidence",
+        "title": "Build a concrete evidence file of your operational impact",
+        "why": "Promotion decisions are made on evidence, not impressions. Most strong candidates lose ground because they can't point to specific numbers and outcomes — not because they haven't done the work.",
+        "color": "amber",
+        "action": "Create a simple doc with three sections: (1) metrics I've moved — before/after numbers, (2) problems I've solved — situation, what I did, result, (3) people I've developed — what each lead can do now that they couldn't before. Spend 30 minutes filling in what you already know.",
+        "evidence": "In your next 1-on-1 with your manager, share one specific example from your evidence file — not as self-promotion, but as a progress update: 'I've been tracking the impact of the changes we made to X. Here's what I'm seeing.' Make your work visible.",
+        "actionSmall": "Too broad? Start with just <strong>one metric</strong> you've influenced in the last 90 days. Write the before number, the after number, and two sentences about what you did. That's your first evidence entry.",
+        "evidenceSmall": "Not ready to share with your manager yet? Share it with a trusted peer or mentor first for feedback. Getting comfortable articulating your impact is the skill — the audience can come later."
+    },
+    {
+        "id": "gaps",
+        "title": "Close the most visible gap between your current role and Operations Manager",
+        "why": "Promotion isn't about doing your current job perfectly — it's about demonstrating that you're already operating at the next level in at least one or two visible ways. One closed gap outweighs ten completed tasks.",
+        "color": "teal",
+        "action": "Identify the single biggest gap between how you work today and how an Operations Manager operates. Common ones: cross-functional thinking, financial fluency, developing people who develop others, influencing without authority. Write it down, then identify one concrete thing you could do this month to close it visibly.",
+        "evidence": "Once you've identified your gap, tell your manager what you're working on: 'I've been thinking about what it takes to step into an Operations Manager role. I think my biggest development area is X — here's what I'm doing about it.' Naming your own gaps signals maturity and self-awareness.",
+        "actionSmall": "Can't identify your own gap clearly? Ask your manager directly: 'What's the one thing you'd most want to see me develop before I'm ready for the next level?' That conversation itself is a signal of readiness.",
+        "evidenceSmall": "Not ready to have that conversation yet? Ask a trusted peer who's been promoted, or review a job description for Operations Manager and note which bullets feel least comfortable. That's your gap list."
+    },
+    {
+        "id": "visibility",
+        "title": "Increase your visibility with decision-makers above your direct manager",
+        "why": "Promotions are rarely decided by one person. Senior leaders need to recognise your name and associate it with impact before they'll advocate for you. Visibility isn't political — it's a practical part of career progression.",
+        "color": "purple",
+        "action": "Identify one opportunity in the next 30 days to present something — a result, a problem you solved, an idea — to an audience that includes someone above your direct manager. A team meeting, a safety review, a project update. Prepare 3 minutes of clear, data-backed content.",
+        "evidence": "After any interaction with a senior leader, send a brief follow-up: 'Thanks for the time today — here's the one-pager on what we discussed.' It keeps you in mind and shows follow-through. One follow-up after one interaction is a meaningful step.",
+        "actionSmall": "Not ready for a presentation? Start by <strong>contributing one insight</strong> in a meeting where senior leaders are present. A single well-framed observation — 'The data shows X, which suggests we should consider Y' — is visible without being high-stakes.",
+        "evidenceSmall": "Instead of a written follow-up, just make a point of introducing yourself clearly in the next cross-functional meeting: name, role, and one sentence about what your team is working on. Being known is the prerequisite to being considered."
+    }
+]
+
 
 # ─── SCORING ─────────────────────────────────────────────────────────
 
@@ -107,55 +139,78 @@ def score_cpo_focus(state):
 
 def score_culture_focus(state):
     scores = {"voice": 0, "ownership": 0, "feedback": 0}
-    barrier = state.get("barrier", "")
-    style   = state.get("style", "")
-    blocker = state.get("blocker", "")
-    freq    = state.get("idea_freq", "")
+    barrier  = state.get("barrier", "")
+    style    = state.get("style", "")
+    freq     = state.get("idea_freq", "")
     decision = state.get("decision_style", "")
 
-    # Barrier drives primary focus
-    if barrier == "voice":
-        scores["voice"] += 4
-    elif barrier == "ownership":
-        scores["ownership"] += 4
-    elif barrier == "feedback":
-        scores["feedback"] += 4
+    if barrier == "voice":       scores["voice"]     += 4
+    elif barrier == "ownership": scores["ownership"] += 4
+    elif barrier == "feedback":  scores["feedback"]  += 4
 
-    # Style: directive → ownership helps most; hands-off → feedback/voice
-    if style == "directive":
-        scores["ownership"] += 2
-        scores["feedback"] += 1
-    elif style == "handsoff":
-        scores["voice"] += 2
-        scores["feedback"] += 1
-    elif style == "inconsistent":
-        scores["feedback"] += 2
-        scores["voice"] += 1
+    if style == "directive":       scores["ownership"] += 2; scores["feedback"] += 1
+    elif style == "handsoff":      scores["voice"]     += 2; scores["feedback"] += 1
+    elif style == "inconsistent":  scores["feedback"]  += 2; scores["voice"]    += 1
 
-    # Idea frequency
-    if freq == "never":
-        scores["voice"] += 2
-    elif freq == "rarely":
-        scores["voice"] += 1
-        scores["ownership"] += 1
+    if freq == "never":            scores["voice"] += 2
+    elif freq == "rarely":         scores["voice"] += 1; scores["ownership"] += 1
 
-    # Decision making
-    if decision == "always_me":
-        scores["ownership"] += 2
-    elif decision == "sometimes":
-        scores["ownership"] += 1
+    if decision == "always_me":    scores["ownership"] += 2
+    elif decision == "sometimes":  scores["ownership"] += 1
 
-    # Blocker
-    if blocker == "trust":
-        scores["ownership"] += 2
-    elif blocker == "time":
-        scores["feedback"] += 1
-        scores["voice"] += 1
-    elif blocker == "skills":
-        scores["feedback"] += 2
+    blocker = state.get("blocker", "")
+    if blocker == "trust":   scores["ownership"] += 2
+    elif blocker == "time":  scores["feedback"]  += 1; scores["voice"] += 1
+    elif blocker == "skills": scores["feedback"] += 2
 
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     return [next(f for f in CULTURE_FOCUSES if f["id"] == k) for k, _ in sorted_scores]
+
+
+def score_promo_focus(state):
+    scores = {"evidence": 0, "gaps": 0, "visibility": 0}
+    timeline    = state.get("timeline", "")
+    blocker     = state.get("promo_blocker", "")
+    feedback    = state.get("manager_feedback", "")
+    track       = state.get("track_record", "")
+    senior      = state.get("senior_visibility", "")
+
+    # Timeline urgency — closer = evidence and gaps more urgent
+    if timeline == "6months":
+        scores["evidence"]   += 3
+        scores["gaps"]       += 2
+    elif timeline == "12months":
+        scores["evidence"]   += 2
+        scores["gaps"]       += 2
+        scores["visibility"] += 1
+    elif timeline == "18months":
+        scores["gaps"]       += 2
+        scores["visibility"] += 2
+
+    # Primary blocker drives the focus
+    if blocker == "no_evidence":   scores["evidence"]   += 4
+    elif blocker == "gaps":        scores["gaps"]       += 4
+    elif blocker == "not_visible": scores["visibility"] += 4
+    elif blocker == "no_convo":    scores["evidence"]   += 2; scores["gaps"] += 2
+
+    # Manager feedback signals
+    if feedback == "not_discussed":  scores["gaps"]       += 2; scores["evidence"] += 1
+    elif feedback == "positive":     scores["visibility"] += 3
+    elif feedback == "needs_work":   scores["gaps"]       += 3
+    elif feedback == "mixed":        scores["evidence"]   += 2; scores["gaps"]      += 1
+
+    # Track record — if weak, evidence is more urgent
+    if track == "strong":    scores["visibility"] += 2
+    elif track == "mixed":   scores["evidence"]   += 2
+    elif track == "unclear": scores["evidence"]   += 3
+
+    # Senior visibility
+    if senior == "none":    scores["visibility"] += 3
+    elif senior == "some":  scores["visibility"] += 1
+    elif senior == "good":  scores["evidence"]   += 1; scores["gaps"] += 1
+
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    return [next(f for f in PROMO_FOCUSES if f["id"] == k) for k, _ in sorted_scores]
 
 
 def compute_scores(state):
@@ -165,69 +220,61 @@ def compute_scores(state):
 
     if flow_type == "cpo":
         trend = state.get("trend", "")
-        if trend == "stable":
-            op += 0.15
-        elif trend == "close":
-            op += 0.25
-        if state.get("errors") == "rare":
-            op += 0.25
-        elif state.get("errors") == "sometimes":
-            op += 0.15
-        if state.get("flow") == "smooth":
-            op += 0.2
-        elif state.get("flow") == "some":
-            op += 0.1
-        if state.get("schedule") == "mostly":
-            op += 0.1
+        if trend == "stable":   op += 0.15
+        elif trend == "close":  op += 0.25
+        if state.get("errors") == "rare":       op += 0.25
+        elif state.get("errors") == "sometimes": op += 0.15
+        if state.get("flow") == "smooth":  op += 0.2
+        elif state.get("flow") == "some":  op += 0.1
+        if state.get("schedule") == "mostly": op += 0.1
 
     elif flow_type == "culture":
-        # Culture flow: op impact grows as coaching culture improves
         freq = state.get("idea_freq", "")
-        if freq == "often":
-            op += 0.3
-        elif freq == "rarely":
-            op += 0.15
+        if freq == "often":  op += 0.3
+        elif freq == "rarely": op += 0.15
         decision = state.get("decision_style", "")
-        if decision == "usually_them":
-            op += 0.25
-        elif decision == "sometimes":
-            op += 0.15
-        step = state.get("step", 0)
-        if step >= 5:
-            op += 0.1
+        if decision == "usually_them": op += 0.25
+        elif decision == "sometimes":  op += 0.15
+        if state.get("step", 0) >= 5: op += 0.1
 
+    elif flow_type == "promo":
+        # Promotion flow: op reflects the strength of their track record
+        track = state.get("track_record", "")
+        if track == "strong":  op += 0.4
+        elif track == "mixed": op += 0.2
+        senior = state.get("senior_visibility", "")
+        if senior == "good":   op += 0.2
+        elif senior == "some": op += 0.1
+        if state.get("step", 0) >= 5: op += 0.1
+
+    # People & coaching bar
     culture = state.get("culture", "")
-    if culture == "frequent":
-        pe += 0.55
-    elif culture == "sometimes":
-        pe += 0.35
-    elif culture == "follow":
-        pe += 0.1
+    if culture == "frequent":   pe += 0.55
+    elif culture == "sometimes": pe += 0.35
+    elif culture == "follow":    pe += 0.1
 
     if flow_type == "culture":
         style = state.get("style", "")
-        if style == "coach":
-            pe += 0.2
-        elif style == "inconsistent":
-            pe += 0.1
-        barrier = state.get("barrier", "")
-        if barrier:
-            pe += 0.1
-        step = state.get("step", 0)
-        if step >= 4:
-            pe += 0.1
-        if step >= 6:
-            pe += 0.15
+        if style == "coach":        pe += 0.2
+        elif style == "inconsistent": pe += 0.1
+        if state.get("barrier", ""): pe += 0.1
+        if state.get("step", 0) >= 4: pe += 0.1
+        if state.get("step", 0) >= 6: pe += 0.15
+
+    elif flow_type == "promo":
+        # Promo flow — pe reflects how much they've developed their people
+        feedback = state.get("manager_feedback", "")
+        if feedback == "positive":     pe += 0.3
+        elif feedback == "mixed":      pe += 0.15
+        elif feedback == "needs_work": pe += 0.05
+        if state.get("step", 0) >= 4: pe += 0.15
+        if state.get("step", 0) >= 6: pe += 0.15
+
     else:
-        if state.get("initiative") == "frequent":
-            pe += 0.25
-        elif state.get("initiative") == "some":
-            pe += 0.15
-        step = state.get("step", 0)
-        if step >= 6:
-            pe += 0.05
-        if step >= 7:
-            pe += 0.1
+        if state.get("initiative") == "frequent": pe += 0.25
+        elif state.get("initiative") == "some":   pe += 0.15
+        if state.get("step", 0) >= 6: pe += 0.05
+        if state.get("step", 0) >= 7: pe += 0.1
 
     return {
         "op": round(min(op, 1.0) * 100),
@@ -238,8 +285,8 @@ def compute_scores(state):
 MOCK_DASHBOARD = {
     "metrics": {
         "cost_per_order":      {"value": "$4.82", "delta": "+12% above target",  "trend": "up_bad"},
-        "coaching_actions":    {"value": "3",      "delta": "this week",           "trend": "up_good"},
-        "promotion_readiness": {"value": "62%",    "delta": "↑ 8pts this month",  "trend": "up_good"}
+        "coaching_actions":    {"value": "3",      "delta": "this week",          "trend": "up_good"},
+        "promotion_readiness": {"value": "62%",    "delta": "↑ 8pts this month", "trend": "up_good"}
     },
     "cpo_trend": [
         {"week": "W1", "value": 5.10, "above": True},
@@ -253,13 +300,13 @@ MOCK_DASHBOARD = {
     ],
     "coaching_trend": [0, 1, 0, 2, 1, 3, 2, 3],
     "recent_actions": [
-        {"text": "Completed coaching culture diagnostic with Grow Coach", "time": "today"},
-        {"text": "Ran 'what's in the way?' huddle with shift leads",      "time": "3 days ago"},
-        {"text": "Delegated handoff improvement project to Lead #2",      "time": "1 week ago"},
-        {"text": "Completed cost per order diagnostic",                    "time": "2 weeks ago"},
-        {"text": "Set Q2 goal: reduce CPO by 15%",                        "time": "3 weeks ago"}
+        {"text": "Completed promotion readiness diagnostic",           "time": "today"},
+        {"text": "Ran coaching culture diagnostic with Grow Coach",    "time": "3 days ago"},
+        {"text": "Delegated handoff improvement project to Lead #2",   "time": "1 week ago"},
+        {"text": "Completed cost per order diagnostic",                "time": "2 weeks ago"},
+        {"text": "Set Q2 goal: reduce CPO by 15%",                    "time": "3 weeks ago"}
     ],
-    "promo_text": "Alex is showing consistent coaching behaviours — creating space for team leads to surface ideas, delegating real ownership, and closing the feedback loop. Two more completed coaching cycles will put Alex in a strong position for a promotion conversation in Q3.",
+    "promo_text": "Alex is building a strong case for Operations Manager. Evidence of operational impact is growing, coaching culture is developing, and senior visibility is increasing. The next 90 days should focus on making impact visible to decision-makers and closing the most prominent skill gap.",
     "promo_readiness": 62
 }
 
@@ -297,6 +344,8 @@ def get_focus():
     flow_type = state.get("flow_type", "cpo")
     if flow_type == "culture":
         ordered = score_culture_focus(state)
+    elif flow_type == "promo":
+        ordered = score_promo_focus(state)
     else:
         ordered = score_cpo_focus(state)
     idx = state.get("focus_idx", 0)
@@ -310,13 +359,14 @@ def next_focus():
     flow_type = state.get("flow_type", "cpo")
     if flow_type == "culture":
         ordered = score_culture_focus(state)
+    elif flow_type == "promo":
+        ordered = score_promo_focus(state)
     else:
         ordered = score_cpo_focus(state)
     idx = (state.get("focus_idx", 0) + 1) % len(ordered)
     state["focus_idx"] = idx
     session["coach_state"] = state
-    focus = ordered[idx]
-    return jsonify({"focus": focus, "idx": idx})
+    return jsonify({"focus": ordered[idx], "idx": idx})
 
 
 @app.route("/api/focus/confirm", methods=["POST"])
@@ -325,6 +375,8 @@ def confirm_focus():
     flow_type = state.get("flow_type", "cpo")
     if flow_type == "culture":
         ordered = score_culture_focus(state)
+    elif flow_type == "promo":
+        ordered = score_promo_focus(state)
     else:
         ordered = score_cpo_focus(state)
     idx = state.get("focus_idx", 0)
@@ -332,8 +384,7 @@ def confirm_focus():
     state["confirmed_focus"] = focus
     state["step"] = 6
     session["coach_state"] = state
-    scores = compute_scores(state)
-    return jsonify({"ok": True, "focus": focus, "scores": scores})
+    return jsonify({"ok": True, "focus": focus, "scores": compute_scores(state)})
 
 
 @app.route("/api/dashboard", methods=["GET"])
@@ -351,43 +402,55 @@ def manager_summary():
     if flow_type == "culture":
         focus = state.get("confirmed_focus") or (score_culture_focus(state)[0] if state else CULTURE_FOCUSES[0])
         style_labels = {
-            "directive":    "tends to direct rather than coach",
-            "handsoff":     "gives lots of autonomy but limited feedback",
+            "directive": "tends to direct rather than coach",
+            "handsoff":  "gives lots of autonomy but limited feedback",
             "inconsistent": "is inconsistent in coaching approach",
-            "coach":        "is actively building a coaching approach"
+            "coach": "is actively building a coaching approach"
         }
-        summary = {
-            "flow_type": "culture",
-            "style_label": style_labels.get(state.get("style", ""), "is developing their coaching style"),
-            "focus_title": focus.get("title", "") if focus else "",
-            "action_task": focus.get("action", "") if focus else "",
+        return jsonify({
+            "flow_type":     "culture",
+            "style_label":   style_labels.get(state.get("style", ""), "is developing their coaching style"),
+            "focus_title":   focus.get("title", "") if focus else "",
+            "action_task":   focus.get("action", "") if focus else "",
             "coaching_task": focus.get("coaching", "") if focus else "",
-            "checkin": checkin_label
+            "checkin":       checkin_label
+        })
+
+    elif flow_type == "promo":
+        focus = state.get("confirmed_focus") or (score_promo_focus(state)[0] if state else PROMO_FOCUSES[0])
+        timeline_labels = {
+            "6months":  "targeting promotion in approximately 6 months",
+            "12months": "targeting promotion in approximately 12 months",
+            "18months": "targeting promotion in approximately 18 months",
+            "exploring": "exploring what promotion readiness looks like"
         }
+        feedback_labels = {
+            "positive":      "has received positive signals from their manager",
+            "needs_work":    "has been told there are areas to develop first",
+            "mixed":         "has received mixed signals",
+            "not_discussed": "has not yet had an explicit promotion conversation"
+        }
+        return jsonify({
+            "flow_type":      "promo",
+            "timeline_label": timeline_labels.get(state.get("timeline", ""), "targeting promotion in the next 12–18 months"),
+            "feedback_label": feedback_labels.get(state.get("manager_feedback", ""), ""),
+            "focus_title":    focus.get("title", "") if focus else "",
+            "action_task":    focus.get("action", "") if focus else "",
+            "evidence_task":  focus.get("evidence", "") if focus else "",
+            "checkin":        checkin_label
+        })
+
     else:
         focus = state.get("confirmed_focus") or (score_cpo_focus(state)[0] if state else CPO_FOCUSES[0])
-        trend_labels = {
-            "worse":  "above target and worsening",
-            "stable": "above target but stable",
-            "close":  "near target but not improving"
-        }
-        pain_labels = {
-            "labor":     "labour and overtime",
-            "errors":    "errors and rework",
-            "transport": "transport and routing",
-            "wait":      "waiting and bottlenecks",
-            "unsure":    "multiple areas"
-        }
-        summary = {
-            "flow_type": "cpo",
-            "trend_label": trend_labels.get(state.get("trend", ""), "above target"),
-            "pain_label":  pain_labels.get(state.get("pain", ""), "operational costs"),
-            "focus_title": focus.get("title", "") if focus else "",
+        return jsonify({
+            "flow_type":    "cpo",
+            "trend_label":  {"worse": "above target and worsening", "stable": "above target but stable", "close": "near target but not improving"}.get(state.get("trend", ""), "above target"),
+            "pain_label":   {"labor": "labour and overtime", "errors": "errors and rework", "transport": "transport and routing", "wait": "waiting and bottlenecks", "unsure": "multiple areas"}.get(state.get("pain", ""), "operational costs"),
+            "focus_title":  focus.get("title", "") if focus else "",
             "process_task": focus.get("process", "") if focus else "",
             "coaching_task": focus.get("coaching", "") if focus else "",
-            "checkin": checkin_label
-        }
-    return jsonify(summary)
+            "checkin":      checkin_label
+        })
 
 
 @app.route("/api/reset", methods=["POST"])

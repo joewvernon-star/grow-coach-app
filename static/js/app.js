@@ -1,14 +1,8 @@
 /* ── GROW COACH — CLIENT APPLICATION ─────────────────────────── */
 
-const STEP_LABELS = [
-  'Welcome', 'About you', 'Your style', 'Your team', 'Barriers',
-  'Your focus', 'Actions this week', 'Wrap-up'
-];
-
-const CPO_STEP_LABELS = [
-  'Welcome', 'Cost trend', 'Pain area', 'Operation size',
-  'Coaching culture', 'Driver check', 'Your focus', 'Actions this week', 'Wrap-up'
-];
+const CPO_STEP_LABELS     = ['Welcome','Cost trend','Pain area','Operation size','Coaching culture','Driver check','Your focus','Actions this week','Wrap-up'];
+const CULTURE_STEP_LABELS = ['Welcome','Your style','Your team','Decision making','Barriers','Your focus','Actions this week','Wrap-up'];
+const PROMO_STEP_LABELS   = ['Welcome','Your timeline','Manager signals','Track record','Senior visibility','Your focus','Actions this week','Wrap-up'];
 
 const COLOR = {
   teal:   { border: '#0F6E56', bg: '#E1F5EE', text: '#085041', accent: '#0F6E56' },
@@ -16,11 +10,11 @@ const COLOR = {
   purple: { border: '#534AB7', bg: '#EEEDFE', text: '#3C3489', accent: '#534AB7' }
 };
 
-let _hasPain    = false;
-let _inSession  = false;
-let _flowType   = null; // 'cpo' | 'culture'
+let _hasPain   = false;
+let _inSession = false;
+let _flowType  = null;
 
-// ── API LAYER ──────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────────────
 const API = {
   async get(path) {
     const r = await fetch(path);
@@ -38,7 +32,7 @@ const API = {
   }
 };
 
-// ── UI UTILITIES ───────────────────────────────────────────────────────
+// ── UI UTILITIES ──────────────────────────────────────────────────────
 const UI = {
   chatBody() { return document.getElementById('chat-body'); },
 
@@ -46,11 +40,9 @@ const UI = {
     const cb = this.chatBody();
     const row = document.createElement('div');
     row.className = 'bubble-row';
-    if (!isUser) {
-      row.innerHTML = `<div class="coach-av"><i class="ti ti-plant-2"></i></div><div class="bubble">${html}</div>`;
-    } else {
-      row.innerHTML = `<div style="flex:1"></div><div class="bubble user-b">${html}</div>`;
-    }
+    row.innerHTML = isUser
+      ? `<div style="flex:1"></div><div class="bubble user-b">${html}</div>`
+      : `<div class="coach-av"><i class="ti ti-plant-2"></i></div><div class="bubble">${html}</div>`;
     cb.appendChild(row);
     cb.scrollTop = cb.scrollHeight;
     return row;
@@ -63,11 +55,9 @@ const UI = {
     row.id = 'typing-row';
     row.className = 'bubble-row';
     row.innerHTML = `<div class="coach-av"><i class="ti ti-plant-2"></i></div>
-      <div class="bubble">
-        <div class="typing">
-          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
-        </div>
-      </div>`;
+      <div class="bubble"><div class="typing">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div></div>`;
     cb.appendChild(row);
     cb.scrollTop = cb.scrollHeight;
   },
@@ -84,8 +74,8 @@ const UI = {
   },
 
   addChips(opts, callback) {
-    const cb = this.chatBody();
-    const id = 'chips-' + Date.now();
+    const cb  = this.chatBody();
+    const id  = 'chips-' + Date.now();
     const div = document.createElement('div');
     div.className = 'chips';
     div.id = id;
@@ -110,35 +100,34 @@ const UI = {
   updateDots(step, total = 8) {
     for (let i = 0; i < 8; i++) {
       const d = document.getElementById('d' + i);
-      if (!d) continue;
-      d.className = 'dot' + (i < step ? ' done' : i === step ? ' active' : '');
+      if (d) d.className = 'dot' + (i < step ? ' done' : i === step ? ' active' : '');
     }
-    const labels = _flowType === 'culture' ? STEP_LABELS : CPO_STEP_LABELS;
-    const lbl = document.getElementById('step-label');
-    const idx  = Math.min(step, labels.length - 1);
-    lbl.innerHTML = step === 0 ? 'Welcome'
+    const labels = _flowType === 'culture' ? CULTURE_STEP_LABELS
+                 : _flowType === 'promo'   ? PROMO_STEP_LABELS
+                 : CPO_STEP_LABELS;
+    const idx = Math.min(step, labels.length - 1);
+    document.getElementById('step-label').innerHTML = step === 0
+      ? 'Welcome'
       : `<strong>Step ${idx} of ${total}</strong> — ${labels[idx]}`;
   },
 
   updateSnap(scores) {
-    document.getElementById('op-bar').style.width = scores.op + '%';
-    document.getElementById('pe-bar').style.width = scores.pe + '%';
+    document.getElementById('op-bar').style.width  = scores.op + '%';
+    document.getElementById('pe-bar').style.width  = scores.pe + '%';
     document.getElementById('op-pct').textContent  = scores.op + '%';
     document.getElementById('pe-pct').textContent  = scores.pe + '%';
+    const goals = {
+      cpo:     'Goal: Reduce cost per order & build coaching culture.',
+      culture: 'Goal: Build a stronger coaching culture with your team leads.',
+      promo:   'Goal: Build your case for Operations Manager promotion.'
+    };
     document.getElementById('snap-goal').textContent = _hasPain
-      ? (_flowType === 'culture'
-          ? 'Goal: Build a stronger coaching culture with your team leads.'
-          : 'Goal: Reduce cost per order & build coaching culture.')
+      ? (goals[_flowType] || goals.cpo)
       : 'Start a coaching session to see your progress here.';
   },
 
-  showSessionBadge(show) {
-    document.getElementById('session-badge').style.display = show ? 'inline-block' : 'none';
-  },
-
-  showHomeBtn(show) {
-    document.getElementById('home-btn').style.display = show ? 'flex' : 'none';
-  }
+  showSessionBadge(show) { document.getElementById('session-badge').style.display = show ? 'inline-block' : 'none'; },
+  showHomeBtn(show)      { document.getElementById('home-btn').style.display      = show ? 'flex'         : 'none'; }
 };
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────
@@ -153,8 +142,7 @@ const Dashboard = {
       const data = await API.get('/api/dashboard');
       const maxCPO   = 5.50;
       const maxCoach = Math.max(...data.coaching_trend, 1);
-      el.innerHTML = `
-      <div style="padding:24px">
+      el.innerHTML = `<div style="padding:24px">
         <div class="dash-section">
           <div class="dash-section-title"><i class="ti ti-layout-dashboard"></i> Grow dashboard</div>
           <div class="metric-grid">
@@ -242,32 +230,22 @@ const Dashboard = {
   }
 };
 
-// ── SHARED FOCUS / TASK HELPERS ───────────────────────────────────────
+// ── FOCUS ENGINE (shared) ─────────────────────────────────────────────
 const FocusEngine = {
   currentFocus: null,
 
   async setState(updates) {
     try {
-      if (updates.pain || updates.barrier) _hasPain = true;
+      if (updates.pain || updates.barrier || updates.promo_blocker || updates.timeline) _hasPain = true;
       const res = await API.post('/api/state', updates);
       if (res.scores) UI.updateSnap(res.scores);
       return res;
     } catch (err) { console.error('setState:', err); }
   },
 
-  async loadFocus() {
-    const { focus } = await API.get('/api/focus');
-    this.currentFocus = focus;
-    return focus;
-  },
-
-  async nextFocus() {
-    document.getElementById('focus-card')?.remove();
-    const { focus } = await API.post('/api/focus/next');
-    this.currentFocus = focus;
-    return focus;
-  },
-
+  async loadFocus()  { const { focus } = await API.get('/api/focus');        this.currentFocus = focus; return focus; },
+  async nextFocus()  { document.getElementById('focus-card')?.remove();
+                       const { focus } = await API.post('/api/focus/next'); this.currentFocus = focus; return focus; },
   async confirmFocus() {
     const card = document.getElementById('focus-card');
     if (card) card.querySelector('.focus-btns').innerHTML =
@@ -279,13 +257,13 @@ const FocusEngine = {
 
   renderFocusCard(focus, label, onConfirm, onNext) {
     const c = COLOR[focus.color] || COLOR.teal;
-    UI.coachSay("Based on what you've shared, here's the focus I'd recommend — it'll move the needle on your team <em>and</em> on you as a leader:").then(() => {
+    UI.coachSay("Based on what you've shared, here's the focus I'd recommend — the highest-leverage place to put your energy right now:").then(() => {
       document.getElementById('focus-card')?.remove();
-      const cb = UI.chatBody();
+      const cb  = UI.chatBody();
       const div = document.createElement('div');
       div.className = 'focus-card';
       div.id = 'focus-card';
-      div.style.border = `1.5px solid ${c.border}`;
+      div.style.border     = `1.5px solid ${c.border}`;
       div.style.background = c.bg;
       div.innerHTML = `
         <div class="focus-label" style="color:${c.accent}">${label}</div>
@@ -306,13 +284,10 @@ const FocusEngine = {
 // ── CPO FLOW ──────────────────────────────────────────────────────────
 const CpoFlow = {
   async start() {
-    _flowType = 'cpo';
-    _hasPain  = false;
+    _flowType = 'cpo'; _hasPain = false;
     await API.post('/api/state', { flow_type: 'cpo' });
     UI.updateDots(1, 8);
-    await UI.coachSay(
-      `Great choice, Alex. We'll look at what's driving your <strong>cost per order</strong> and how your team is working — because improving <em>processes</em> and developing <em>people</em> go hand in hand.<br><br>This takes about 5 minutes. Tap your answers as we go.`
-    );
+    await UI.coachSay(`Great choice, Alex. We'll look at what's driving your <strong>cost per order</strong> and how your team is working — because improving <em>processes</em> and developing <em>people</em> go hand in hand.<br><br>This takes about 5 minutes. Tap your answers as we go.`);
     setTimeout(() => this.stepTrend(), 300);
   },
 
@@ -323,8 +298,7 @@ const CpoFlow = {
         { label: 'Higher than target, but stable',    val: 'stable' },
         { label: 'Close to target, not improving',    val: 'close'  },
       ], async (val) => {
-        await FocusEngine.setState({ trend: val, step: 2 });
-        UI.updateDots(2, 8);
+        await FocusEngine.setState({ trend: val, step: 2 }); UI.updateDots(2, 8);
         setTimeout(() => this.stepPain(), 400);
       });
     });
@@ -348,21 +322,16 @@ const CpoFlow = {
   stepSize() {
     UI.coachSay('A couple of quick context questions — how many <strong>orders per day</strong> does your site typically run?').then(() => {
       UI.addChips([
-        { label: 'Under 500',      val: 's'  },
-        { label: '500 – 2,000',   val: 'm'  },
-        { label: '2,000 – 5,000', val: 'l'  },
-        { label: 'Over 5,000',     val: 'xl' },
+        { label: 'Under 500',      val: 's'  }, { label: '500 – 2,000',   val: 'm'  },
+        { label: '2,000 – 5,000', val: 'l'  }, { label: 'Over 5,000',     val: 'xl' },
       ], async (val) => {
         await FocusEngine.setState({ orders: val });
         UI.coachSay('And how many <strong>team leads or direct reports</strong> do you manage?').then(() => {
           UI.addChips([
-            { label: '1 – 3',  val: 'xs' },
-            { label: '4 – 8',  val: 's'  },
-            { label: '9 – 15', val: 'm'  },
-            { label: '16+',    val: 'l'  },
+            { label: '1 – 3', val: 'xs' }, { label: '4 – 8', val: 's' },
+            { label: '9 – 15', val: 'm' }, { label: '16+',   val: 'l' },
           ], async (v) => {
-            await FocusEngine.setState({ team: v, step: 3 });
-            UI.updateDots(3, 8);
+            await FocusEngine.setState({ team: v, step: 3 }); UI.updateDots(3, 8);
             setTimeout(() => this.stepCulture(), 400);
           });
         });
@@ -377,8 +346,7 @@ const CpoFlow = {
         { label: 'They sometimes bring ideas, but I usually drive', val: 'sometimes' },
         { label: 'They regularly bring ideas and own them',         val: 'frequent'  },
       ], async (val) => {
-        await FocusEngine.setState({ culture: val, step: 4 });
-        UI.updateDots(4, 8);
+        await FocusEngine.setState({ culture: val, step: 4 }); UI.updateDots(4, 8);
         setTimeout(() => this.stepDrivers(), 400);
       });
     });
@@ -388,32 +356,24 @@ const CpoFlow = {
     UI.coachSay("Almost done. Four quick driver questions — tap where you'd honestly put your operation today.").then(() => {
       UI.coachSay('<strong>Shift schedules vs. workload</strong> — how well do your shifts match when the work actually arrives?').then(() => {
         UI.addChips([
-          { label: 'Often mismatched', val: 'mis'   },
-          { label: 'Mostly matched',   val: 'mostly' },
+          { label: 'Often mismatched', val: 'mis' }, { label: 'Mostly matched', val: 'mostly' },
         ], async (v) => {
           await FocusEngine.setState({ schedule: v });
           UI.coachSay('<strong>Errors and rework</strong> — how often do order errors require correction?').then(() => {
             UI.addChips([
-              { label: 'Often — a real cost driver', val: 'often'     },
-              { label: 'Sometimes',                  val: 'sometimes' },
-              { label: 'Rare',                       val: 'rare'      },
+              { label: 'Often — a real cost driver', val: 'often' }, { label: 'Sometimes', val: 'sometimes' }, { label: 'Rare', val: 'rare' },
             ], async (v2) => {
               await FocusEngine.setState({ errors: v2 });
               UI.coachSay('<strong>Flow and bottlenecks</strong> — how would you describe throughput during peak periods?').then(() => {
                 UI.addChips([
-                  { label: 'Frequent bottlenecks', val: 'freq'   },
-                  { label: 'Some slowdowns',       val: 'some'   },
-                  { label: 'Mostly smooth',        val: 'smooth' },
+                  { label: 'Frequent bottlenecks', val: 'freq' }, { label: 'Some slowdowns', val: 'some' }, { label: 'Mostly smooth', val: 'smooth' },
                 ], async (v3) => {
                   await FocusEngine.setState({ flow: v3 });
                   UI.coachSay('<strong>Team initiative</strong> — how often do your leads surface improvement ideas without being asked?').then(() => {
                     UI.addChips([
-                      { label: 'Rare — I have to pull ideas', val: 'rare'     },
-                      { label: 'Sometimes',                   val: 'some'     },
-                      { label: 'Frequently — they drive it',  val: 'frequent' },
+                      { label: 'Rare — I have to pull ideas', val: 'rare' }, { label: 'Sometimes', val: 'some' }, { label: 'Frequently — they drive it', val: 'frequent' },
                     ], async (v4) => {
-                      await FocusEngine.setState({ initiative: v4, step: 5 });
-                      UI.updateDots(5, 8);
+                      await FocusEngine.setState({ initiative: v4, step: 5 }); UI.updateDots(5, 8);
                       setTimeout(() => this.stepFocus(), 500);
                     });
                   });
@@ -429,80 +389,51 @@ const CpoFlow = {
   async stepFocus() {
     try {
       const focus = await FocusEngine.loadFocus();
-      FocusEngine.renderFocusCard(focus, 'Recommended focus',
-        () => this.confirmFocus(),
-        () => this.nextFocus()
-      );
-    } catch (err) { UI.addBubble('Could not load recommendation. Please refresh.'); }
+      FocusEngine.renderFocusCard(focus, 'Recommended focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load recommendation. Please refresh.'); }
   },
-
   async nextFocus() {
     try {
       const focus = await FocusEngine.nextFocus();
-      FocusEngine.renderFocusCard(focus, 'Alternative focus',
-        () => this.confirmFocus(),
-        () => this.nextFocus()
-      );
-    } catch (err) { UI.addBubble('Could not load alternative. Please try again.'); }
+      FocusEngine.renderFocusCard(focus, 'Alternative focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load alternative.'); }
   },
-
   async confirmFocus() {
-    try {
-      await FocusEngine.confirmFocus();
-      UI.updateDots(6, 8);
-      setTimeout(() => this.stepTasks(), 600);
-    } catch (err) { UI.addBubble('Something went wrong. Please refresh.'); }
+    try { await FocusEngine.confirmFocus(); UI.updateDots(6, 8); setTimeout(() => this.stepTasks(), 600); }
+    catch (e) { UI.addBubble('Something went wrong. Please refresh.'); }
   },
 
   stepTasks() {
     const f = FocusEngine.currentFocus;
     UI.coachSay('Perfect. Here are <strong>two things to do this week</strong> — one for your operation, one for your people.').then(() => {
-      setTimeout(() => this.renderTaskCard('process', f), 400);
-      setTimeout(() => { this.renderTaskCard('coaching', f); setTimeout(() => this.stepWrap(), 900); }, 1000);
+      setTimeout(() => this._renderCard('process', f), 400);
+      setTimeout(() => { this._renderCard('coaching', f); setTimeout(() => this.stepWrap(), 900); }, 1000);
     });
   },
 
-  renderTaskCard(type, f) {
-    const cb = UI.chatBody();
-    const div = document.createElement('div');
-    div.className = 'task-card';
-    div.id = 'task-' + type;
+  _renderCard(type, f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-' + type;
     const isCoach = type === 'coaching';
     div.innerHTML = `
-      <div class="task-header ${type}">
-        <i class="ti ${isCoach ? 'ti-users' : 'ti-chart-bar'}"></i>
-        ${isCoach ? 'Coaching task' : 'Process task'}
-      </div>
+      <div class="task-header ${type}"><i class="ti ${isCoach ? 'ti-users' : 'ti-chart-bar'}"></i>${isCoach ? 'Coaching task' : 'Process task'}</div>
       <div class="task-body" id="tbody-${type}">${isCoach ? f.coaching : f.process}</div>
       <div class="task-actions">
-        <button class="task-chip" id="tchip-plan-${type}" onclick="CpoFlow.taskAction('${type}','plan')">
-          <i class="ti ti-calendar-check"></i> Mark as planned
-        </button>
-        <button class="task-chip" id="tchip-small-${type}" onclick="CpoFlow.taskAction('${type}','small')">
-          Too big — suggest smaller
-        </button>
-        ${isCoach ? `<button class="task-chip" id="tchip-ready-${type}" onclick="CpoFlow.taskAction('${type}','notready')">Not ready to involve my leads yet</button>` : ''}
+        <button class="task-chip" id="tchip-plan-${type}" onclick="CpoFlow.taskAction('${type}','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="CpoFlow.taskAction('${type}','small')">Too big — suggest smaller</button>
+        ${isCoach ? `<button class="task-chip" onclick="CpoFlow.taskAction('${type}','notready')">Not ready to involve my leads yet</button>` : ''}
       </div>`;
-    cb.appendChild(div);
-    cb.scrollTop = cb.scrollHeight;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
   },
 
   taskAction(type, action) {
-    const f = FocusEngine.currentFocus;
-    const body = document.getElementById('tbody-' + type);
+    const f = FocusEngine.currentFocus, body = document.getElementById('tbody-' + type);
     if (!body) return;
     if (action === 'plan') {
       const btn = document.getElementById('tchip-plan-' + type);
-      btn.className = 'task-chip done-chip';
-      btn.innerHTML = '<i class="ti ti-check"></i> Planned for this week';
-      btn.disabled = true;
-    } else if (action === 'small') {
-      body.innerHTML = type === 'coaching' ? f.coachingSmall : f.processSmall;
-      document.getElementById('tchip-small-' + type)?.remove();
-    } else if (action === 'notready') {
-      body.innerHTML = f.coachingNotReady;
-      document.getElementById('tchip-ready-' + type)?.remove();
-    }
+      btn.className = 'task-chip done-chip'; btn.innerHTML = '<i class="ti ti-check"></i> Planned for this week'; btn.disabled = true;
+    } else if (action === 'small')    { body.innerHTML = type === 'coaching' ? f.coachingSmall    : f.processSmall; body.closest('.task-card').querySelectorAll('.task-chip:not(.done-chip)')[0]?.remove(); }
+      else if (action === 'notready') { body.innerHTML = f.coachingNotReady; body.closest('.task-card').querySelectorAll('.task-chip:not(.done-chip)')[1]?.remove(); }
     UI.chatBody().scrollTop = 99999;
   },
 
@@ -510,21 +441,19 @@ const CpoFlow = {
     UI.updateDots(7, 8);
     try {
       const { state } = await API.get('/api/state');
-      const trendLabels = { worse: 'above target and worsening', stable: 'above target but stable', close: 'near target but not improving' };
-      const painLabels  = { labor: 'labour and overtime', errors: 'errors and rework', transport: 'transport and routing', wait: 'waiting and bottlenecks', unsure: 'multiple areas' };
+      const trendL = { worse: 'above target and worsening', stable: 'above target but stable', close: 'near target but not improving' };
+      const painL  = { labor: 'labour and overtime', errors: 'errors and rework', transport: 'transport and routing', wait: 'waiting and bottlenecks', unsure: 'multiple areas' };
       await UI.coachSay(`Here's a summary of your session:<br><br>
-        📌 <strong>Baseline:</strong> Cost per order is ${trendLabels[state.trend] || 'above target'}. Primary pressure: ${painLabels[state.pain] || state.pain}.<br>
+        📌 <strong>Baseline:</strong> Cost per order is ${trendL[state.trend] || 'above target'}. Primary pressure: ${painL[state.pain] || state.pain}.<br>
         🎯 <strong>Focus:</strong> ${FocusEngine.currentFocus.title.split(' by ')[0]}.<br>
-        📋 <strong>This week:</strong> One process task, one coaching conversation.<br><br>
-        When would you like me to check in with you?`);
+        📋 <strong>This week:</strong> One process task, one coaching conversation.<br><br>When would you like me to check in?`);
       UI.addChips([
         { label: '3 days', val: '3 days' }, { label: '1 week', val: '1 week' }, { label: 'Remind me later', val: 'later' },
       ], async (val) => {
-        await FocusEngine.setState({ checkin: val, step: 8 });
-        UI.updateDots(8, 8);
+        await FocusEngine.setState({ checkin: val, step: 8 }); UI.updateDots(8, 8);
         setTimeout(() => this.stepDone(val), 400);
       });
-    } catch (err) { UI.addBubble('Could not load summary. Please refresh.'); }
+    } catch (e) { UI.addBubble('Could not load summary. Please refresh.'); }
   },
 
   async stepDone(checkin) {
@@ -537,26 +466,22 @@ const CpoFlow = {
 // ── CULTURE FLOW ──────────────────────────────────────────────────────
 const CultureFlow = {
   async start() {
-    _flowType = 'culture';
-    _hasPain  = false;
+    _flowType = 'culture'; _hasPain = false;
     await API.post('/api/state', { flow_type: 'culture' });
     UI.updateDots(1, 7);
-    await UI.coachSay(
-      `Great — building a coaching culture is one of the highest-leverage things you can do as an Operations Lead. It improves your team's results <em>and</em> it's exactly what gets people promoted.<br><br>I'll ask you a few honest questions about how things work today. No right answers — just tap what's true for you right now.`
-    );
+    await UI.coachSay(`Great — building a coaching culture is one of the highest-leverage things you can do as an Operations Lead. It improves your team's results <em>and</em> it's exactly what gets people promoted.<br><br>I'll ask you a few honest questions about how things work today. No right answers — just tap what's true for you right now.`);
     setTimeout(() => this.stepStyle(), 300);
   },
 
   stepStyle() {
     UI.coachSay("When you think about <strong>how you lead day-to-day</strong>, which comes closest?").then(() => {
       UI.addChips([
-        { label: 'I mostly direct — I tell my leads what to do',       val: 'directive'    },
-        { label: 'I give them space, but don\'t give much feedback',   val: 'handsoff'     },
-        { label: 'I coach sometimes, but I\'m inconsistent',           val: 'inconsistent' },
-        { label: 'I actively coach — but want to get better at it',    val: 'coach'        },
+        { label: 'I mostly direct — I tell my leads what to do',    val: 'directive'    },
+        { label: "I give them space, but don't give much feedback", val: 'handsoff'     },
+        { label: "I coach sometimes, but I'm inconsistent",         val: 'inconsistent' },
+        { label: 'I actively coach — but want to get better at it', val: 'coach'        },
       ], async (val) => {
-        await FocusEngine.setState({ style: val, step: 2 });
-        UI.updateDots(2, 7);
+        await FocusEngine.setState({ style: val, step: 2 }); UI.updateDots(2, 7);
         setTimeout(() => this.stepTeam(), 400);
       });
     });
@@ -565,13 +490,12 @@ const CultureFlow = {
   stepTeam() {
     UI.coachSay("How would you describe your team leads' current level of <strong>initiative</strong>?").then(() => {
       UI.addChips([
-        { label: 'They wait to be told what to do',           val: 'never'  },
-        { label: 'They act on their own occasionally',        val: 'rarely' },
-        { label: 'They often take initiative independently',  val: 'often'  },
+        { label: 'They wait to be told what to do',          val: 'never'  },
+        { label: 'They act on their own occasionally',       val: 'rarely' },
+        { label: 'They often take initiative independently', val: 'often'  },
       ], async (val) => {
         await FocusEngine.setState({ idea_freq: val, culture: val === 'often' ? 'frequent' : val === 'rarely' ? 'sometimes' : 'follow' });
-        _hasPain = true;
-        setTimeout(() => this.stepDecision(), 400);
+        _hasPain = true; setTimeout(() => this.stepDecision(), 400);
       });
     });
   },
@@ -583,8 +507,7 @@ const CultureFlow = {
         { label: 'Sometimes me, sometimes them',               val: 'sometimes'    },
         { label: 'Usually them, I just need to know about it', val: 'usually_them' },
       ], async (val) => {
-        await FocusEngine.setState({ decision_style: val, step: 3 });
-        UI.updateDots(3, 7);
+        await FocusEngine.setState({ decision_style: val, step: 3 }); UI.updateDots(3, 7);
         setTimeout(() => this.stepBarrier(), 400);
       });
     });
@@ -593,16 +516,14 @@ const CultureFlow = {
   stepBarrier() {
     UI.coachSay("When you picture your team leads stepping up more — what feels like the <strong>biggest thing in the way</strong>?").then(() => {
       UI.addChips([
-        { label: "They don't speak up or share ideas",          val: 'voice'     },
+        { label: "They don't speak up or share ideas",            val: 'voice'     },
         { label: "They don't take ownership without being pushed", val: 'ownership' },
-        { label: "I don't give them enough feedback to grow",   val: 'feedback'  },
-        { label: "I haven't trusted them with enough yet",      val: 'trust'     },
-        { label: "I don't have time to coach properly",         val: 'time'      },
+        { label: "I don't give them enough feedback to grow",     val: 'feedback'  },
+        { label: "I haven't trusted them with enough yet",        val: 'trust'     },
+        { label: "I don't have time to coach properly",           val: 'time'      },
       ], async (val) => {
-        // Map trust/time to barrier categories for scoring
         const barrier = (val === 'trust') ? 'ownership' : (val === 'time') ? 'feedback' : val;
-        await FocusEngine.setState({ blocker: val, barrier: barrier, step: 4 });
-        UI.updateDots(4, 7);
+        await FocusEngine.setState({ blocker: val, barrier, step: 4 }); UI.updateDots(4, 7);
         setTimeout(() => this.stepFocus(), 500);
       });
     });
@@ -611,123 +532,81 @@ const CultureFlow = {
   async stepFocus() {
     try {
       const focus = await FocusEngine.loadFocus();
-      FocusEngine.renderFocusCard(focus, 'Recommended focus',
-        () => this.confirmFocus(),
-        () => this.nextFocus()
-      );
-    } catch (err) { UI.addBubble('Could not load recommendation. Please refresh.'); }
+      FocusEngine.renderFocusCard(focus, 'Recommended focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load recommendation. Please refresh.'); }
   },
-
   async nextFocus() {
     try {
       const focus = await FocusEngine.nextFocus();
-      FocusEngine.renderFocusCard(focus, 'Alternative focus',
-        () => this.confirmFocus(),
-        () => this.nextFocus()
-      );
-    } catch (err) { UI.addBubble('Could not load alternative. Please try again.'); }
+      FocusEngine.renderFocusCard(focus, 'Alternative focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load alternative.'); }
   },
-
   async confirmFocus() {
-    try {
-      await FocusEngine.confirmFocus();
-      UI.updateDots(5, 7);
-      setTimeout(() => this.stepTasks(), 600);
-    } catch (err) { UI.addBubble('Something went wrong. Please refresh.'); }
+    try { await FocusEngine.confirmFocus(); UI.updateDots(5, 7); setTimeout(() => this.stepTasks(), 600); }
+    catch (e) { UI.addBubble('Something went wrong. Please refresh.'); }
   },
 
   stepTasks() {
     const f = FocusEngine.currentFocus;
     UI.coachSay('Here are <strong>two things to do this week</strong> — a concrete team action and a coaching behaviour to practise alongside it.').then(() => {
-      setTimeout(() => this.renderActionCard(f), 400);
-      setTimeout(() => { this.renderCoachingCard(f); setTimeout(() => this.stepWrap(), 900); }, 1000);
+      setTimeout(() => this._renderAction(f), 400);
+      setTimeout(() => { this._renderCoaching(f); setTimeout(() => this.stepWrap(), 900); }, 1000);
     });
   },
 
-  renderActionCard(f) {
-    const cb = UI.chatBody();
-    const div = document.createElement('div');
-    div.className = 'task-card';
-    div.id = 'task-action';
+  _renderAction(f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-action';
     div.innerHTML = `
-      <div class="task-header coaching" style="color:var(--purple)">
-        <i class="ti ti-users"></i> Team action
-      </div>
+      <div class="task-header coaching"><i class="ti ti-users"></i> Team action</div>
       <div class="task-body" id="tbody-action">${f.action}</div>
       <div class="task-actions">
-        <button class="task-chip" id="tchip-plan-action" onclick="CultureFlow.taskAction('action','plan')">
-          <i class="ti ti-calendar-check"></i> Mark as planned
-        </button>
-        <button class="task-chip" onclick="CultureFlow.taskAction('action','small')">
-          Too big — suggest smaller
-        </button>
+        <button class="task-chip" id="tchip-plan-action" onclick="CultureFlow.taskAction('action','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="CultureFlow.taskAction('action','small')">Too big — suggest smaller</button>
       </div>`;
-    cb.appendChild(div);
-    cb.scrollTop = cb.scrollHeight;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
   },
 
-  renderCoachingCard(f) {
-    const cb = UI.chatBody();
-    const div = document.createElement('div');
-    div.className = 'task-card';
-    div.id = 'task-coaching';
+  _renderCoaching(f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-coaching';
     div.innerHTML = `
-      <div class="task-header process" style="color:var(--teal)">
-        <i class="ti ti-bulb"></i> Coaching behaviour
-      </div>
+      <div class="task-header process" style="color:var(--teal)"><i class="ti ti-bulb"></i> Coaching behaviour</div>
       <div class="task-body" id="tbody-coaching">${f.coaching}</div>
       <div class="task-actions">
-        <button class="task-chip" id="tchip-plan-coaching" onclick="CultureFlow.taskAction('coaching','plan')">
-          <i class="ti ti-calendar-check"></i> Mark as planned
-        </button>
-        <button class="task-chip" onclick="CultureFlow.taskAction('coaching','small')">
-          Not ready for this yet
-        </button>
+        <button class="task-chip" id="tchip-plan-coaching" onclick="CultureFlow.taskAction('coaching','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="CultureFlow.taskAction('coaching','small')">Not ready for this yet</button>
       </div>`;
-    cb.appendChild(div);
-    cb.scrollTop = cb.scrollHeight;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
   },
 
   taskAction(type, action) {
-    const f = FocusEngine.currentFocus;
-    const body = document.getElementById('tbody-' + type);
+    const f = FocusEngine.currentFocus, body = document.getElementById('tbody-' + type);
     if (!body) return;
     if (action === 'plan') {
       const btn = document.getElementById('tchip-plan-' + type);
-      btn.className = 'task-chip done-chip';
-      btn.innerHTML = '<i class="ti ti-check"></i> Planned for this week';
-      btn.disabled = true;
+      btn.className = 'task-chip done-chip'; btn.innerHTML = '<i class="ti ti-check"></i> Planned for this week'; btn.disabled = true;
     } else if (action === 'small') {
       body.innerHTML = type === 'coaching' ? f.coachingSmall : f.actionSmall;
-      // remove the "smaller" button
-      body.closest('.task-card').querySelector('.task-actions button:nth-child(2)')?.remove();
+      body.closest('.task-card').querySelectorAll('.task-chip:not(.done-chip)')[0]?.remove();
     }
     UI.chatBody().scrollTop = 99999;
   },
 
   async stepWrap() {
     UI.updateDots(6, 7);
-    const styleLabels = {
-      directive:    'tend to direct rather than coach',
-      handsoff:     'give lots of autonomy but limited feedback',
-      inconsistent: 'are inconsistent in your coaching',
-      coach:        'actively coach but want to sharpen it'
-    };
+    const styleL = { directive: 'tend to direct rather than coach', handsoff: 'give lots of autonomy but limited feedback', inconsistent: 'are inconsistent in your coaching', coach: 'actively coach but want to sharpen it' };
+    const blockerL = { voice: "team leads don't speak up enough", ownership: "leads don't take ownership without being pushed", feedback: "not enough feedback for leads to grow", trust: "haven't yet trusted leads with enough", time: "not enough time to coach properly" };
     const { state } = await API.get('/api/state').catch(() => ({ state: {} }));
-    const styleLabel = styleLabels[state.style] || 'are developing your coaching approach';
-
     await UI.coachSay(`Here's what we've established today:<br><br>
-      🪞 <strong>Self-assessment:</strong> You ${styleLabel}.<br>
-      🚧 <strong>Biggest barrier:</strong> ${_barrierLabel(state.blocker)}.<br>
+      🪞 <strong>Self-assessment:</strong> You ${styleL[state.style] || 'are developing your coaching approach'}.<br>
+      🚧 <strong>Biggest barrier:</strong> ${blockerL[state.blocker] || 'unclear — worth reflecting on'}.<br>
       🎯 <strong>Focus:</strong> ${FocusEngine.currentFocus.title}.<br>
-      📋 <strong>This week:</strong> One team action, one coaching behaviour to practise.<br><br>
-      When would you like me to check in with you?`);
-
+      📋 <strong>This week:</strong> One team action, one coaching behaviour to practise.<br><br>When would you like me to check in?`);
     UI.addChips([
       { label: '3 days', val: '3 days' }, { label: '1 week', val: '1 week' }, { label: 'Remind me later', val: 'later' },
     ], async (val) => {
-      await FocusEngine.setState({ checkin: val, step: 7 });
-      UI.updateDots(7, 7);
+      await FocusEngine.setState({ checkin: val, step: 7 }); UI.updateDots(7, 7);
       setTimeout(() => this.stepDone(val), 400);
     });
   },
@@ -739,9 +618,172 @@ const CultureFlow = {
   }
 };
 
+// ── PROMOTION FLOW ────────────────────────────────────────────────────
+const PromoFlow = {
+  async start() {
+    _flowType = 'promo'; _hasPain = false;
+    await API.post('/api/state', { flow_type: 'promo' });
+    UI.updateDots(1, 7);
+    await UI.coachSay(`Let's build your case for Operations Manager. This isn't about doing your current job better — it's about making sure the right people can see that you're <em>already</em> operating at the next level.<br><br>I'll ask you four honest questions. The more direct you are, the more useful the recommendation.`);
+    setTimeout(() => this.stepTimeline(), 300);
+  },
+
+  stepTimeline() {
+    UI.coachSay("First — how are you thinking about <strong>your promotion timeline</strong>?").then(() => {
+      UI.addChips([
+        { label: 'I want to be ready in about 6 months',         val: '6months'   },
+        { label: 'I\'m targeting the next 12 months',            val: '12months'  },
+        { label: 'More like 18 months — I want to do it right',  val: '18months'  },
+        { label: 'I\'m exploring — no fixed timeline yet',       val: 'exploring' },
+      ], async (val) => {
+        await FocusEngine.setState({ timeline: val, step: 2 }); UI.updateDots(2, 7);
+        _hasPain = true;
+        setTimeout(() => this.stepFeedback(), 400);
+      });
+    });
+  },
+
+  stepFeedback() {
+    UI.coachSay("Has your manager given you any signals about <strong>where you stand</strong> on promotion readiness?").then(() => {
+      UI.addChips([
+        { label: "We haven't discussed it directly",        val: 'not_discussed' },
+        { label: 'I\'ve had positive signals',             val: 'positive'      },
+        { label: 'I\'ve been told there are gaps to close', val: 'needs_work'   },
+        { label: 'Signals have been mixed',                val: 'mixed'         },
+      ], async (val) => {
+        await FocusEngine.setState({ manager_feedback: val, step: 3 }); UI.updateDots(3, 7);
+        setTimeout(() => this.stepTrackRecord(), 400);
+      });
+    });
+  },
+
+  stepTrackRecord() {
+    UI.coachSay("How would you describe your <strong>track record of operational impact</strong> over the last 6–12 months?").then(() => {
+      UI.addChips([
+        { label: 'Strong — I can point to clear results and numbers', val: 'strong'  },
+        { label: 'Mixed — some wins but not consistently visible',    val: 'mixed'   },
+        { label: 'Unclear — I\'ve done good work but haven\'t tracked it', val: 'unclear' },
+      ], async (val) => {
+        await FocusEngine.setState({ track_record: val, step: 4 }); UI.updateDots(4, 7);
+        setTimeout(() => this.stepVisibility(), 400);
+      });
+    });
+  },
+
+  stepVisibility() {
+    UI.coachSay("How visible are you to <strong>senior leaders above your direct manager</strong>?").then(() => {
+      UI.addChips([
+        { label: 'Barely — I mostly interact with my direct manager', val: 'none' },
+        { label: 'Some exposure but not regularly',                   val: 'some' },
+        { label: 'Good — I regularly interact with senior leaders',   val: 'good' },
+      ], async (val) => {
+        await FocusEngine.setState({ senior_visibility: val, promo_blocker: _inferBlocker(val), step: 5 });
+        UI.updateDots(5, 7);
+        setTimeout(() => this.stepFocus(), 500);
+      });
+    });
+  },
+
+  async stepFocus() {
+    try {
+      const focus = await FocusEngine.loadFocus();
+      FocusEngine.renderFocusCard(focus, 'Recommended focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load recommendation. Please refresh.'); }
+  },
+  async nextFocus() {
+    try {
+      const focus = await FocusEngine.nextFocus();
+      FocusEngine.renderFocusCard(focus, 'Alternative focus', () => this.confirmFocus(), () => this.nextFocus());
+    } catch (e) { UI.addBubble('Could not load alternative.'); }
+  },
+  async confirmFocus() {
+    try { await FocusEngine.confirmFocus(); UI.updateDots(6, 7); setTimeout(() => this.stepTasks(), 600); }
+    catch (e) { UI.addBubble('Something went wrong. Please refresh.'); }
+  },
+
+  stepTasks() {
+    const f = FocusEngine.currentFocus;
+    UI.coachSay("Here are <strong>two things to do this week</strong> — one that builds your case, one that makes it visible to the right people.").then(() => {
+      setTimeout(() => this._renderBuildCard(f), 400);
+      setTimeout(() => { this._renderVisibleCard(f); setTimeout(() => this.stepWrap(), 900); }, 1000);
+    });
+  },
+
+  _renderBuildCard(f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-build';
+    div.innerHTML = `
+      <div class="task-header process" style="color:var(--amber)"><i class="ti ti-file-plus"></i> Build your case</div>
+      <div class="task-body" id="tbody-build">${f.action}</div>
+      <div class="task-actions">
+        <button class="task-chip" id="tchip-plan-build" onclick="PromoFlow.taskAction('build','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="PromoFlow.taskAction('build','small')">Too big — suggest smaller</button>
+      </div>`;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
+  },
+
+  _renderVisibleCard(f) {
+    const cb = UI.chatBody(), div = document.createElement('div');
+    div.className = 'task-card'; div.id = 'task-visible';
+    div.innerHTML = `
+      <div class="task-header coaching"><i class="ti ti-eye"></i> Make it visible</div>
+      <div class="task-body" id="tbody-visible">${f.evidence}</div>
+      <div class="task-actions">
+        <button class="task-chip" id="tchip-plan-visible" onclick="PromoFlow.taskAction('visible','plan')"><i class="ti ti-calendar-check"></i> Mark as planned</button>
+        <button class="task-chip" onclick="PromoFlow.taskAction('visible','small')">Not ready for this yet</button>
+      </div>`;
+    cb.appendChild(div); cb.scrollTop = cb.scrollHeight;
+  },
+
+  taskAction(type, action) {
+    const f = FocusEngine.currentFocus, body = document.getElementById('tbody-' + type);
+    if (!body) return;
+    if (action === 'plan') {
+      const btn = document.getElementById('tchip-plan-' + type);
+      btn.className = 'task-chip done-chip'; btn.innerHTML = '<i class="ti ti-check"></i> Planned for this week'; btn.disabled = true;
+    } else if (action === 'small') {
+      body.innerHTML = type === 'visible' ? f.evidenceSmall : f.actionSmall;
+      body.closest('.task-card').querySelectorAll('.task-chip:not(.done-chip)')[0]?.remove();
+    }
+    UI.chatBody().scrollTop = 99999;
+  },
+
+  async stepWrap() {
+    UI.updateDots(7, 7);
+    const timelineL = { '6months': 'in ~6 months', '12months': 'in ~12 months', '18months': 'in ~18 months', 'exploring': 'on your own timeline' };
+    const feedbackL = { not_discussed: "haven't discussed promotion with your manager yet", positive: 'have received positive signals', needs_work: 'have been told there are gaps to close first', mixed: 'have received mixed signals' };
+    const trackL   = { strong: 'strong and measurable', mixed: 'mixed — some visible wins', unclear: 'unclear — needs to be documented' };
+    const { state } = await API.get('/api/state').catch(() => ({ state: {} }));
+    await UI.coachSay(`Here's where you stand today:<br><br>
+      🗓️ <strong>Timeline:</strong> Targeting promotion ${timelineL[state.timeline] || 'in the next 12–18 months'}.<br>
+      💬 <strong>Manager signals:</strong> You ${feedbackL[state.manager_feedback] || 'are building your case'}.<br>
+      📊 <strong>Track record:</strong> ${trackL[state.track_record] || 'In progress'}.<br>
+      🎯 <strong>Focus:</strong> ${FocusEngine.currentFocus.title}.<br>
+      📋 <strong>This week:</strong> Build your case. Make it visible.<br><br>When would you like me to check in?`);
+    UI.addChips([
+      { label: '3 days', val: '3 days' }, { label: '1 week', val: '1 week' }, { label: 'Remind me later', val: 'later' },
+    ], async (val) => {
+      await FocusEngine.setState({ checkin: val, step: 8 }); UI.updateDots(8, 7);
+      setTimeout(() => this.stepDone(val), 400);
+    });
+  },
+
+  async stepDone(checkin) {
+    const label = checkin === 'later' ? "when you're ready" : `in <strong>${checkin}</strong>`;
+    await UI.coachSay(`Got it — I'll check in ${label}.<br><br>Promotion readiness isn't one big moment — it's built from small, visible actions over time. You've started today.<br><br>Good luck this week, Alex. 🌱`);
+    _renderWrapButtons();
+  }
+};
+
+// Helper: infer primary blocker from visibility answer + track record
+function _inferBlocker(visibility) {
+  if (visibility === 'none') return 'not_visible';
+  return 'no_evidence';
+}
+
 // ── SHARED WRAP BUTTONS ───────────────────────────────────────────────
 function _renderWrapButtons() {
-  const cb = UI.chatBody();
+  const cb  = UI.chatBody();
   const div = document.createElement('div');
   div.className = 'wrap-actions';
   div.innerHTML = `
@@ -760,63 +802,59 @@ function _renderWrapButtons() {
 
 async function _showManagerSummary() {
   try {
-    const summary = await API.get('/api/summary');
-    const cb = UI.chatBody();
+    const s   = await API.get('/api/summary');
+    const cb  = UI.chatBody();
     const div = document.createElement('div');
     div.className = 'summary-card';
     div.style.cssText = 'margin: 8px 0 0 40px; max-width: 520px;';
 
-    let bodyHtml = '';
-    if (summary.flow_type === 'culture') {
-      bodyHtml = `
-        <p><strong>Context:</strong> Alex is working to build a stronger coaching culture. Current self-assessment: Alex ${summary.style_label}.</p>
-        <p><strong>Focus area:</strong> "<em>${summary.focus_title}</em>"</p>
+    let body = '';
+    if (s.flow_type === 'promo') {
+      body = `
+        <p><strong>Context:</strong> Alex is ${s.timeline_label} and ${s.feedback_label}.</p>
+        <p><strong>Focus area:</strong> "<em>${s.focus_title}</em>"</p>
         <p><strong>This week's commitments:</strong><br>
-           1. Team action: ${summary.action_task}<br>
-           2. Coaching behaviour: ${summary.coaching_task}</p>
-        <p><strong>Check-in:</strong> ${summary.checkin}</p>
-        <p><strong>Development note:</strong> Alex is actively working to shift from a directive style to a coaching approach — creating space for team leads to bring ideas, make decisions, and own improvements. This is a direct signal of Operations Manager readiness.</p>`;
+           1. Build the case: ${s.action_task}<br>
+           2. Make it visible: ${s.evidence_task}</p>
+        <p><strong>Check-in:</strong> ${s.checkin}</p>
+        <p><strong>Development note:</strong> Alex is actively building promotion readiness — not waiting to be noticed, but constructing a clear evidence base and increasing visibility with decision-makers. This proactive approach is itself a signal of Operations Manager readiness.</p>`;
+    } else if (s.flow_type === 'culture') {
+      body = `
+        <p><strong>Context:</strong> Alex is working to build a stronger coaching culture. Current self-assessment: Alex ${s.style_label}.</p>
+        <p><strong>Focus area:</strong> "<em>${s.focus_title}</em>"</p>
+        <p><strong>This week's commitments:</strong><br>
+           1. Team action: ${s.action_task}<br>
+           2. Coaching behaviour: ${s.coaching_task}</p>
+        <p><strong>Check-in:</strong> ${s.checkin}</p>
+        <p><strong>Development note:</strong> Alex is actively working to shift from a directive style to a coaching approach — creating space for team leads to bring ideas, make decisions, and own improvements.</p>`;
     } else {
-      bodyHtml = `
-        <p><strong>Context:</strong> Alex is working to reduce cost per order, currently ${summary.trend_label}. Primary pressure: ${summary.pain_label}.</p>
-        <p><strong>Focus area:</strong> "<em>${summary.focus_title}</em>"</p>
+      body = `
+        <p><strong>Context:</strong> Alex is working to reduce cost per order, currently ${s.trend_label}. Primary pressure: ${s.pain_label}.</p>
+        <p><strong>Focus area:</strong> "<em>${s.focus_title}</em>"</p>
         <p><strong>This week's commitments:</strong><br>
-           1. Process: ${summary.process_task}<br>
-           2. Coaching: ${summary.coaching_task}</p>
-        <p><strong>Check-in:</strong> ${summary.checkin}</p>
-        <p><strong>Development note:</strong> Alex is actively building coaching habits alongside operational improvement — involving team leads in root cause work rather than directing solutions. This is a key signal of readiness for Operations Manager.</p>`;
+           1. Process: ${s.process_task}<br>
+           2. Coaching: ${s.coaching_task}</p>
+        <p><strong>Check-in:</strong> ${s.checkin}</p>
+        <p><strong>Development note:</strong> Alex is actively building coaching habits alongside operational improvement — involving team leads in root cause work rather than directing solutions.</p>`;
     }
 
     div.innerHTML = `
       <div class="summary-header"><i class="ti ti-file-text"></i> Manager summary — ready to share</div>
-      <div class="summary-body">${bodyHtml}</div>`;
+      <div class="summary-body">${body}</div>`;
     cb.appendChild(div);
     cb.scrollTop = cb.scrollHeight;
-  } catch (err) {
-    UI.addBubble('Could not generate summary. Please try again.');
-  }
+  } catch (err) { UI.addBubble('Could not generate summary. Please try again.'); }
 }
 
-function _barrierLabel(blocker) {
-  return {
-    voice:     "team leads don't speak up enough",
-    ownership: "leads don't take ownership without being pushed",
-    feedback:  "not enough feedback for leads to grow",
-    trust:     "haven't yet trusted leads with enough",
-    time:      "not enough time to coach properly"
-  }[blocker] || "unclear — worth reflecting on";
-}
-
-// ── APP CONTROLLER ─────────────────────────────────────────────────────
+// ── APP CONTROLLER ────────────────────────────────────────────────────
 const App = {
   showView(v) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     if (v === 'coach') {
-      const which = _inSession ? 'view-chat' : 'view-entry';
-      document.getElementById(which).classList.add('active');
+      document.getElementById(_inSession ? 'view-chat' : 'view-entry').classList.add('active');
       document.getElementById('nav-coach').classList.add('active');
-    } else if (v === 'dash') {
+    } else {
       document.getElementById('view-dash').classList.add('active');
       document.getElementById('nav-dash').classList.add('active');
       Dashboard.render();
@@ -825,19 +863,13 @@ const App = {
 
   async goHome() {
     try { await API.post('/api/reset'); } catch (e) {}
-    _inSession = false;
-    _hasPain   = false;
-    _flowType  = null;
+    _inSession = false; _hasPain = false; _flowType = null;
     FocusEngine.currentFocus = null;
     document.getElementById('chat-body').innerHTML = '';
-    UI.updateDots(0);
-    UI.showSessionBadge(false);
-    UI.showHomeBtn(false);
+    UI.updateDots(0); UI.showSessionBadge(false); UI.showHomeBtn(false);
     document.getElementById('snap-goal').textContent = 'Start a coaching session to see your progress here.';
-    document.getElementById('op-bar').style.width = '0%';
-    document.getElementById('pe-bar').style.width = '0%';
-    document.getElementById('op-pct').textContent = '—';
-    document.getElementById('pe-pct').textContent = '—';
+    ['op-bar','pe-bar'].forEach(id => document.getElementById(id).style.width = '0%');
+    ['op-pct','pe-pct'].forEach(id => document.getElementById(id).textContent = '—');
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('view-entry').classList.add('active');
@@ -853,16 +885,10 @@ const App = {
     _inSession = true;
     UI.showSessionBadge(true);
     UI.showHomeBtn(true);
-
-    API.post('/api/reset').then(() => {
-      if (type === 'culture') {
-        CultureFlow.start();
-      } else {
-        CpoFlow.start();
-      }
-    }).catch(() => {
-      if (type === 'culture') CultureFlow.start();
-      else CpoFlow.start();
+    API.post('/api/reset').finally(() => {
+      if (type === 'culture')       CultureFlow.start();
+      else if (type === 'promo')    PromoFlow.start();
+      else                          CpoFlow.start();
     });
   }
 };
