@@ -811,7 +811,7 @@ const OvertimeFlow = {
         { label: 'It happens at roughly the same time most days', val: 'same_time'  },
         { label: 'It tends to pile up at the end of shifts',      val: 'end_shift'  },
         { label: 'It feels random — hard to predict',             val: 'random'     },
-        { label: 'It's occasional rather than a weekly pattern', val: 'occasional' },
+        { label: "It's occasional rather than a weekly pattern", val: 'occasional' },
       ], async (val) => {
         await FocusEngine.setState({ ot_pattern: val, step: 3 }); UI.updateDots(3, 7);
         setTimeout(() => this.stepData(), 400);
@@ -836,8 +836,8 @@ const OvertimeFlow = {
     UI.coachSay("When it comes to solving this with your team leads — where are you right now?").then(() => {
       UI.addChips([
         { label: 'Ready — I want them involved in finding the fix', val: 'ready'   },
-        { label: 'I'd rather understand the problem myself first', val: 'not_yet' },
-        { label: 'My leads don't yet have the skills to help',     val: 'skills'  },
+        { label: "I'd rather understand the problem myself first", val: 'not_yet' },
+        { label: "My leads don't yet have the skills to help",     val: 'skills'  },
       ], async (val) => {
         await FocusEngine.setState({ ot_leads: val, step: 5 }); UI.updateDots(5, 7);
         setTimeout(() => this.stepFocus(), 500);
